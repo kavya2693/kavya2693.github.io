@@ -131,7 +131,7 @@
 
     <!-- METRICS -->
     <div class="metrics reveal">
-      <div class="metric"><b>6</b><span>knowledge graphs, prototype → production-shaped</span></div>
+      <div class="metric"><b>10</b><span>graph systems, prototype → production-shaped</span></div>
       <div class="metric"><b>RDF·OWL·SHACL</b><span>+ LinkML governed ontologies</span></div>
       <div class="metric"><b>Neo4j · Neptune</b><span>Cypher &amp; SPARQL at scale</span></div>
       <div class="metric"><b>Graph-RAG</b><span>NL → query, cited answers</span></div>
@@ -222,6 +222,33 @@
           <p><b>Graph decision.</b> Parse SQL and Python into <b>one dependency graph</b>, so "what breaks if I change this column" becomes a reachability query — statically, before the change ships.</p>
           <ul class="stack"><li>graph</li><li>static analysis</li><li>reachability</li></ul>
           <a class="link" href="https://github.com/kavya2693/blastradius" target="_blank" rel="noopener">View on GitHub →</a>
+        </article>
+
+        <article class="case reveal">
+          <div class="top"><h3>GraphForge</h3><span class="pill">Prototype</span></div>
+          <p class="tag">Graph-as-IR · App generation</p>
+          <p><b>Problem.</b> Turning business requirements into a working app means re-modeling the same domain by hand every time — schema, API, UI — and it drifts out of sync.</p>
+          <p><b>Graph decision.</b> Use a <b>knowledge graph as the intermediate representation</b>: extract the domain into a graph, then generate the schema, API, and React app from it, so one model drives the whole build.</p>
+          <ul class="stack"><li>graph-as-IR</li><li>domain extraction</li><li>codegen</li><li>React</li></ul>
+          <span class="link">Prototype · walkthrough on request</span>
+        </article>
+
+        <article class="case reveal">
+          <div class="top"><h3>Local NL→Cypher</h3><span class="pill">Prototype</span></div>
+          <p class="tag">On-prem · Fine-tuning</p>
+          <p><b>Problem.</b> Analysts want to ask a graph questions in plain English, but the data is sensitive and can't be sent to a hosted model.</p>
+          <p><b>Graph decision.</b> An <b>ontology-grounded NL→Cypher</b> pipeline running fully offline (Neo4j + Ollama), with a <b>LoRA-fine-tuned Qwen2.5</b> for the translation, validated against a held-out query set.</p>
+          <ul class="stack"><li>NL2Cypher</li><li>ontology-grounded</li><li>LoRA (MLX)</li><li>Neo4j</li></ul>
+          <span class="link">Prototype · walkthrough on request</span>
+        </article>
+
+        <article class="case reveal">
+          <div class="top"><h3>Graph-augmented forecasting</h3><span class="pill">Prototype</span></div>
+          <p class="tag">Retail · Graph ML</p>
+          <p><b>Problem.</b> Store × SKU demand forecasts ignore how products and stores relate — cannibalization, substitution, and shared demand shocks.</p>
+          <p><b>Graph decision.</b> A <b>graph encoder</b> over cross-product / cross-store relationships feeds <b>node embeddings</b> into a global LightGBM across <b>4,000+ SKUs × 33 stores</b>. ML beats naive by ~23%, with an honest read on where the graph lift stays small.</p>
+          <ul class="stack"><li>graph encoder</li><li>node embeddings</li><li>LightGBM</li><li>spatiotemporal</li></ul>
+          <span class="link">Prototype · walkthrough on request</span>
         </article>
 
       </div>
