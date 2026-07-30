@@ -1,0 +1,1938 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<title>Omnichannel HCP Personalization &amp; Next-Best-Action Platform — Architecture</title>
+
+<style>
+  :root{
+    --paper:#FAFAFB; --card:#FFFFFF; --ink:#0D1117; --ink-2:#3A4451; --ink-3:#697586;
+    --rule:#E2E6EB; --rule-2:#EDF0F3;
+    --accent:#0E7C86; --accent-soft:#E4F2F3;
+    --real:#0E7C86; --real-bg:#E1F0F1;
+    --poc:#A85D08;  --poc-bg:#FAEDDD;
+    --sim:#5B4BC4;  --sim-bg:#EBE8FA;
+    --tgt:#5C6675;  --tgt-bg:#EDF0F3;
+    --measure:74ch;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --paper:#0C1013; --card:#141A1F; --ink:#EAEEF2; --ink-2:#B4BEC9; --ink-3:#8492A0;
+      --rule:#232C34; --rule-2:#1B2228;
+      --accent:#3FB3BD; --accent-soft:#10262A;
+      --real:#3FB3BD; --real-bg:#0F2B2E;
+      --poc:#D89A44; --poc-bg:#2E2213;
+      --sim:#9C8DF0; --sim-bg:#211C3B;
+      --tgt:#93A0AE; --tgt-bg:#1C2329;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0C1013; --card:#141A1F; --ink:#EAEEF2; --ink-2:#B4BEC9; --ink-3:#8492A0;
+    --rule:#232C34; --rule-2:#1B2228;
+    --accent:#3FB3BD; --accent-soft:#10262A;
+    --real:#3FB3BD; --real-bg:#0F2B2E;
+    --poc:#D89A44; --poc-bg:#2E2213;
+    --sim:#9C8DF0; --sim-bg:#211C3B;
+    --tgt:#93A0AE; --tgt-bg:#1C2329;
+  }
+  :root[data-theme="light"]{
+    --paper:#FAFAFB; --card:#FFFFFF; --ink:#0D1117; --ink-2:#3A4451; --ink-3:#697586;
+    --rule:#E2E6EB; --rule-2:#EDF0F3;
+    --accent:#0E7C86; --accent-soft:#E4F2F3;
+    --real:#0E7C86; --real-bg:#E1F0F1;
+    --poc:#A85D08;  --poc-bg:#FAEDDD;
+    --sim:#5B4BC4;  --sim-bg:#EBE8FA;
+    --tgt:#5C6675;  --tgt-bg:#EDF0F3;
+  }
+
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:16px; line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:1460px; margin:0 auto; padding:0 32px 120px; }
+  .col{ max-width:var(--measure); }
+
+  code,kbd,.mono{ font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace; }
+  code{ font-size:.875em; background:var(--rule-2); padding:.12em .38em; border-radius:3px; color:var(--ink-2); }
+
+  h1,h2,h3{ text-wrap:balance; letter-spacing:-.018em; line-height:1.22; }
+  h1{ font-size:clamp(1.9rem,4vw,2.7rem); font-weight:660; margin:0 0 .5rem; }
+  h2{ font-size:1.42rem; font-weight:640; margin:0; }
+  h3{ font-size:1.02rem; font-weight:640; margin:2.2rem 0 .5rem; color:var(--ink); }
+  p{ margin:0 0 1rem; color:var(--ink-2); }
+  .lede{ font-size:1.075rem; color:var(--ink-2); }
+  a{ color:var(--accent); }
+
+  /* masthead */
+  header.mast{ padding:64px 0 34px; border-bottom:1px solid var(--rule); }
+  .eyebrow{
+    font:600 .69rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+    letter-spacing:.15em; text-transform:uppercase; color:var(--accent); margin-bottom:1.1rem;
+  }
+
+
+
+  /* view sections — numbering encodes altitude, L0 to L2 */
+  section.view{ padding:52px 0 8px; border-top:1px solid var(--rule-2); }
+  section.view:first-of-type{ border-top:none; }
+  .vhead{ display:flex; gap:16px; align-items:baseline; margin-bottom:.7rem; }
+  .vnum{
+    font:600 .74rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+    color:var(--accent); background:var(--accent-soft);
+    padding:4px 8px; border-radius:3px; white-space:nowrap; flex:none;
+  }
+  .alt{
+    font:600 .66rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+    letter-spacing:.1em; color:var(--ink-3); border:1px solid var(--rule);
+    padding:4px 7px; border-radius:3px; flex:none;
+  }
+
+  /* diagram surface: deliberately one light ground in both themes so
+     mermaid's single render stays legible either way */
+  .diagram{
+    margin:20px 0 6px; padding:22px 18px;
+    background:#FFFFFF; border:1px solid var(--rule); border-radius:4px;
+    overflow-x:auto;
+  }
+  .diagram pre.mermaid{ background:transparent; margin:0; min-width:min-content; }
+  .caption{ font-size:.82rem; color:var(--ink-3); margin:8px 0 0; }
+
+  /* tables */
+  .tablewrap{ overflow-x:auto; margin:18px 0 6px; border:1px solid var(--rule); border-radius:4px; background:var(--card); }
+  table{ border-collapse:collapse; width:100%; font-size:.86rem; }
+  th,td{ text-align:left; padding:9px 13px; border-bottom:1px solid var(--rule-2); vertical-align:top; }
+  th{
+    font:600 .68rem/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;
+    letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3);
+    background:var(--rule-2); white-space:nowrap;
+  }
+  td{ color:var(--ink-2); }
+  tr:last-child td{ border-bottom:none; }
+  td.num{ font-variant-numeric:tabular-nums; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; white-space:nowrap; }
+  td strong{ color:var(--ink); font-weight:600; }
+
+  ul,ol{ margin:0 0 1rem; padding-left:1.15rem; color:var(--ink-2); }
+  li{ margin:.28rem 0; }
+  li::marker{ color:var(--ink-3); }
+
+  .note{
+    margin:18px 0; padding:14px 16px; background:var(--card);
+    border:1px solid var(--rule); border-left:3px solid var(--accent); border-radius:2px;
+    font-size:.9rem; color:var(--ink-2);
+  }
+  .note strong{ color:var(--ink); }
+
+  footer{ margin-top:70px; padding-top:24px; border-top:1px solid var(--rule); font-size:.83rem; color:var(--ink-3); }
+
+
+
+  /* ═══ EXECUTIVE OPENING ═══════════════════════════════════════════ */
+  header.exec{
+    display:grid; grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);
+    gap:56px; align-items:start; padding:72px 0 64px;
+  }
+  header.exec .eyebrow{ margin-bottom:1.4rem; }
+  header.exec h1{
+    font-size:clamp(2rem,3.4vw,3.05rem); font-weight:600; line-height:1.13;
+    letter-spacing:-.028em; margin:0 0 1.4rem;
+  }
+  header.exec .lede{
+    font-size:1.06rem; line-height:1.62; color:var(--ink-2);
+    max-width:56ch; margin:0 0 2rem;
+  }
+  .prodcard{
+    padding:22px 24px; border:1px solid var(--rule); border-left:3px solid var(--sim);
+    border-radius:4px; background:var(--card);
+  }
+  .prodname{
+    font-size:1.14rem; font-weight:640; line-height:1.32; color:var(--ink);
+    letter-spacing:-.015em; margin-bottom:.7rem;
+  }
+  .proddesc{ font-size:.92rem; line-height:1.6; margin:0 0 .9rem; color:var(--ink-2); }
+  .prodlabel{
+    font:600 .64rem/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;
+    letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3);
+    padding-top:.75rem; border-top:1px solid var(--rule-2);
+  }
+  .execquote{
+    margin:30px 0 0; padding:0 0 0 20px; border-left:2px solid var(--accent);
+    font-size:1.12rem; line-height:1.5; color:var(--ink-2); letter-spacing:-.012em;
+  }
+  .execquote b{ color:var(--ink); font-weight:620; }
+
+  .exec-viz{ margin:0; position:sticky; top:78px; }
+  .exec-viz svg{ width:100%; height:auto; display:block; }
+  .vz-t{ font:600 12.5px ui-sans-serif,system-ui,sans-serif; fill:var(--ink); }
+  .vz-s{ font:11px ui-sans-serif,system-ui,sans-serif; fill:var(--ink-3); }
+  .vz-pt{ font:640 14px ui-sans-serif,system-ui,sans-serif; fill:var(--sim); letter-spacing:-.01em; }
+  .vz-out{ font:640 11.5px ui-monospace,Menlo,monospace; fill:var(--sim); letter-spacing:.06em; text-anchor:middle; }
+  .vz-gap{ font:640 9.5px ui-monospace,Menlo,monospace; fill:var(--poc); letter-spacing:.13em; }
+  .vz-lbl{ font:640 9.5px ui-monospace,Menlo,monospace; fill:var(--ink-3); letter-spacing:.13em; }
+  .vz-cap{ font:600 12px ui-sans-serif,system-ui,sans-serif; fill:var(--ink); }
+  .vz-cap2{ font:11.5px ui-sans-serif,system-ui,sans-serif; fill:var(--ink-3); }
+  .vz-chip rect{ fill:var(--card); stroke:var(--rule); }
+  .vz-chip text{ font:11px ui-sans-serif,system-ui,sans-serif; fill:var(--ink-2); }
+
+  /* ── pain points ── */
+  .secttl{
+    font:600 .68rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+    letter-spacing:.15em; text-transform:uppercase; color:var(--ink-3);
+    margin:0 0 22px; padding-top:56px; border-top:1px solid var(--rule);
+  }
+  .paingrid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; }
+  .pain{
+    padding:26px 26px 22px; border:1px solid var(--rule); border-radius:5px;
+    background:var(--card); display:flex; flex-direction:column;
+  }
+  .pain h3{ margin:0 0 .8rem; font-size:1.1rem; font-weight:620; letter-spacing:-.015em; }
+  .pain p{ font-size:.9rem; line-height:1.62; margin:0 0 1.4rem; flex:1; }
+  .impact{
+    font:640 .66rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--poc);
+    background:var(--poc-bg); padding:8px 11px; border-radius:3px; align-self:flex-start;
+  }
+
+  /* ── product opportunity ── */
+  .opp{
+    margin:64px 0 0; padding:40px 40px 36px;
+    border:1px solid var(--rule); border-top:3px solid var(--sim);
+    border-radius:5px; background:var(--card);
+  }
+  .opp > h2{ font-size:1.5rem; font-weight:620; letter-spacing:-.022em; margin:0 0 24px; }
+  .tuple{
+    display:flex; flex-wrap:wrap; align-items:center; gap:10px;
+    padding:18px 20px; border-radius:4px; background:var(--sim-bg); margin-bottom:32px;
+  }
+  .tuple span{
+    font:640 .88rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+    color:var(--sim); letter-spacing:-.01em;
+  }
+  .tuple i{ font-style:normal; color:var(--ink-3); font-size:.85rem; }
+  .oppgrid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:36px; }
+  .oppcol h4{
+    font:640 .66rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+    letter-spacing:.13em; text-transform:uppercase; color:var(--ink-3);
+    margin:0 0 14px; padding-bottom:9px; border-bottom:1px solid var(--rule-2);
+  }
+  .chips{ list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:7px; }
+  .chips li{
+    font-size:.82rem; padding:6px 11px; border-radius:3px;
+    background:var(--real-bg); color:var(--real); margin:0;
+  }
+  .steps{ list-style:none; margin:0; padding:0; counter-reset:s; }
+  .steps li{
+    counter-increment:s; position:relative; padding:7px 0 7px 30px;
+    font-size:.88rem; color:var(--ink-2); margin:0;
+    border-bottom:1px solid var(--rule-2);
+  }
+  .steps li:last-child{ border-bottom:none; }
+  .steps li::before{
+    content:counter(s); position:absolute; left:0; top:7px;
+    font:640 .68rem/1.5 ui-monospace,Menlo,monospace; color:var(--sim);
+    background:var(--sim-bg); width:19px; height:19px; border-radius:3px; text-align:center;
+  }
+  .obj{ border:1px solid var(--rule-2); border-radius:4px; overflow:hidden; }
+  .objline{
+    padding:9px 13px; font:.85rem/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;
+    border-bottom:1px solid var(--rule-2);
+  }
+  .objline:last-child{ border-bottom:none; }
+  .objline.pos{ background:var(--real-bg); color:var(--real); font-weight:600; }
+  .objline.neg{ color:var(--ink-3); }
+  .constraint-h{ margin-top:22px !important; }
+  .constraint{
+    font-size:.85rem; line-height:1.55; margin:0; padding:12px 14px;
+    background:var(--poc-bg); color:var(--poc); border-radius:3px;
+  }
+  .position{
+    margin:34px 0 0; padding:24px 26px; border-radius:4px;
+    background:var(--rule-2); font-size:1.02rem; line-height:1.58; color:var(--ink-2);
+  }
+  .position span{ display:block; color:var(--ink); font-weight:620; margin-bottom:.35rem; }
+
+  /* ── glossary accordion ── */
+  details.glossary{ margin:40px 0 0; border:1px solid var(--rule); border-radius:5px; background:var(--card); }
+  details.glossary > summary{
+    cursor:pointer; list-style:none; padding:16px 22px;
+    font:600 .76rem/1.3 ui-sans-serif,system-ui,sans-serif; color:var(--ink-2);
+  }
+  details.glossary > summary::-webkit-details-marker{ display:none; }
+  details.glossary > summary::before{ content:"\25B8  "; color:var(--accent); }
+  details[open].glossary > summary::before{ content:"\25BE  "; }
+  details.glossary > summary:hover{ color:var(--ink); }
+  .glossbody{ padding:4px 22px 24px; border-top:1px solid var(--rule-2); }
+  .glossbody dl{
+    margin:18px 0 0; display:grid; grid-template-columns:auto 1fr; gap:7px 18px; font-size:.85rem;
+  }
+  .glossbody dt{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-weight:600; color:var(--accent); white-space:nowrap; }
+  .glossbody dd{ margin:0; color:var(--ink-2); }
+  .refstrip{
+    margin-top:22px; padding-top:18px; border-top:1px solid var(--rule-2);
+    display:flex; flex-direction:column; gap:10px; font-size:.8rem; color:var(--ink-3);
+  }
+  .refstrip b{
+    display:inline-block; min-width:112px; color:var(--ink-3);
+    font:640 .64rem/1.6 ui-monospace,Menlo,monospace; letter-spacing:.1em; text-transform:uppercase;
+  }
+  .refstrip code{ margin-right:5px; }
+
+  /* ── handoff into View 01 ── */
+  .handoff{ margin:60px 0 0; padding:34px 0 10px; border-top:1px solid var(--rule); text-align:center; }
+  .handoff-eyebrow{
+    font:640 .66rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+    letter-spacing:.15em; text-transform:uppercase; color:var(--accent); margin-bottom:14px;
+  }
+  .handoff p{
+    max-width:64ch; margin:0 auto; font-size:1.02rem; line-height:1.6; color:var(--ink-2);
+  }
+  .cue{ width:22px; height:31px; margin-top:20px; color:var(--ink-3); opacity:.65; }
+  @media (prefers-reduced-motion:no-preference){
+    .cue{ animation:nudge 2.6s ease-in-out infinite; }
+    @keyframes nudge{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(5px); } }
+  }
+
+  @media (max-width:1080px){
+    header.exec{ grid-template-columns:1fr; gap:44px; padding:52px 0 48px; }
+    .exec-viz{ position:static; max-width:520px; }
+    .paingrid,.oppgrid{ grid-template-columns:1fr; }
+    .opp{ padding:30px 24px; }
+  }
+
+
+  /* ═══ VIEW 01 — COMMERCIAL OPERATING BOUNDARY ═════════════════════ */
+  .hook{ max-width:80ch; margin:0 0 34px; }
+  .hook-label{
+    font:640 .68rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+    letter-spacing:.16em; text-transform:uppercase; color:var(--accent); margin-bottom:14px;
+  }
+  .hook-title{
+    font-size:clamp(1.5rem,2.3vw,2.05rem); font-weight:620; line-height:1.2;
+    letter-spacing:-.024em; margin:0 0 1rem;
+  }
+  .hook-sub{ font-size:1rem; line-height:1.62; color:var(--ink-2); margin:0 0 1.2rem; max-width:72ch; }
+  .hook-line{
+    margin:0; padding:14px 0 0; border-top:1px solid var(--rule);
+    font-size:1.1rem; font-weight:600; line-height:1.42; color:var(--ink);
+    letter-spacing:-.016em; max-width:68ch;
+  }
+
+  /* journey teaser */
+  .journey{ margin:0 0 46px; padding:18px 0 6px; }
+  .journey svg{ width:100%; height:auto; display:block; }
+  .jr-box{ fill:var(--card); stroke:var(--rule); }
+  .jr-box-hero{ fill:var(--sim-bg); stroke:var(--sim); stroke-width:1.8; }
+  .jr-ico{ fill:none; stroke:var(--real); stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+  .jr-ico .fill{ fill:var(--real); stroke:none; }
+  .jr-ico-hero{ fill:none; stroke:var(--sim); stroke-width:1.8; stroke-linecap:round; }
+  .jr-t{ font:600 12.5px ui-sans-serif,system-ui,sans-serif; fill:var(--ink); text-anchor:middle; }
+  .jr-t-hero{ font:640 14px ui-sans-serif,system-ui,sans-serif; fill:var(--sim); text-anchor:middle; letter-spacing:-.01em; }
+  .jr-s{ font:11px ui-sans-serif,system-ui,sans-serif; fill:var(--ink-3); text-anchor:middle; }
+  .jr-line{ stroke:var(--ink-3); stroke-width:1.3; }
+  .jr-cap{ font:11.5px ui-sans-serif,system-ui,sans-serif; fill:var(--ink-3); }
+
+  /* operating model */
+  .opmodel{ margin:0 0 44px; padding:22px 16px; background:var(--card); border:1px solid var(--rule); border-radius:6px; overflow-x:auto; }
+  .opmodel svg{ width:100%; min-width:1040px; height:auto; display:block; }
+  .om-zone{ font:640 9.5px ui-monospace,Menlo,monospace; fill:var(--ink-3); letter-spacing:.15em; text-transform:uppercase; }
+  .om-zone-c{ fill:var(--sim); }
+  .om-bg{ fill:var(--card); stroke:var(--rule); stroke-width:1.3; }
+  .om-bg-a{ stroke:var(--poc); stroke-width:1.8; }
+  .om-ico{ fill:none; stroke:var(--real); stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+  .om-ico-a{ stroke:var(--poc); }
+  .om-t{ font:640 13px ui-sans-serif,system-ui,sans-serif; fill:var(--ink); }
+  .om-d{ font:11.5px ui-sans-serif,system-ui,sans-serif; fill:var(--ink-3); }
+  .om-bar{ fill:var(--rule-2); }
+  .om-bar-a{ fill:var(--poc-bg); }
+  .om-lb{ font:600 11px ui-sans-serif,system-ui,sans-serif; fill:var(--ink-2); }
+  .om-lb2{ font:10.5px ui-sans-serif,system-ui,sans-serif; fill:var(--ink-3); }
+  .om-lb-a{ fill:var(--poc); }
+  .om-badge rect{ fill:var(--poc); }
+  .om-badge text{ font:640 9px ui-monospace,Menlo,monospace; fill:#fff; letter-spacing:.12em; }
+  .om-line{ stroke:var(--ink-3); stroke-width:1.4; fill:none; }
+  .om-line-a{ stroke:var(--poc); stroke-width:1.8; }
+  .om-line-v{ stroke:var(--sim); stroke-width:1.6; }
+  .om-dash{ stroke-dasharray:6 4; }
+  .om-al{ font:10.5px ui-sans-serif,system-ui,sans-serif; fill:var(--ink-3); }
+  .om-al-a{ fill:var(--poc); font-weight:600; }
+  .om-al-v{ fill:var(--sim); font-weight:600; }
+  .om-al-dim{ opacity:.75; }
+  .om-pbg{ fill:var(--sim-bg); stroke:var(--sim); stroke-width:2.2; }
+  .om-inset rect{ fill:var(--sim); }
+  .om-inset text{ font:640 9px ui-monospace,Menlo,monospace; fill:#fff; letter-spacing:.14em; }
+  .om-pt{ font:640 17px ui-sans-serif,system-ui,sans-serif; fill:var(--ink); letter-spacing:-.018em; }
+  .om-ps{ font:12px ui-sans-serif,system-ui,sans-serif; fill:var(--ink-2); }
+  .om-step rect{ fill:var(--card); stroke:var(--rule); }
+  .om-step text{ font:600 12px ui-sans-serif,system-ui,sans-serif; fill:var(--ink); }
+  .om-step-a rect{ fill:var(--poc-bg); stroke:var(--poc); }
+  .om-step-a text{ fill:var(--poc); }
+  .om-stepd{ font:10.5px ui-monospace,Menlo,monospace !important; fill:var(--ink-3) !important; font-weight:400 !important; }
+  .om-stepd-a{ fill:var(--poc) !important; }
+  .om-contract{ fill:var(--sim); }
+  .om-ct{ font:640 12.5px ui-monospace,Menlo,monospace; fill:#fff; letter-spacing:.02em; }
+  .om-note{ font:600 11.5px ui-sans-serif,system-ui,sans-serif; fill:var(--sim); }
+  .om-note2{ font:11px ui-sans-serif,system-ui,sans-serif; fill:var(--ink-3); }
+  .om-chan text{ font:9.5px ui-monospace,Menlo,monospace; fill:var(--real); letter-spacing:.02em; }
+  .om-cap{ font:11px ui-sans-serif,system-ui,sans-serif; fill:var(--ink-3); }
+
+  /* decision rights */
+  .rights{ margin:0 0 26px; }
+  .rights-h{
+    font:640 .66rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+    letter-spacing:.15em; text-transform:uppercase; color:var(--ink-3); margin-bottom:14px;
+  }
+  .rights-grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+  .right-col{ padding:18px 18px 16px; border-radius:5px; background:var(--card); border:1px solid var(--rule); border-top:3px solid var(--rule); }
+  .right-a{ border-top-color:var(--poc); }
+  .right-t{ border-top-color:var(--real); }
+  .right-v{ border-top-color:var(--sim); }
+  .rc-who{ font-size:.92rem; font-weight:640; margin-bottom:.5rem; color:var(--ink); }
+  .rc-what{ font-size:.84rem; line-height:1.5; color:var(--ink-3); }
+  .rc-what b{ color:var(--ink-2); font-weight:620; }
+
+  /* value + contrast */
+  .valuewrap{ display:grid; grid-template-columns:minmax(0,1.9fr) minmax(0,1fr); gap:24px; margin-bottom:10px; }
+  .valgrid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+  .valcard{ padding:18px 18px 16px; border-radius:5px; background:var(--card); border:1px solid var(--rule); }
+  .valcard .vn{
+    display:block; font:640 .7rem/1 ui-monospace,Menlo,monospace;
+    color:var(--accent); letter-spacing:.1em; margin-bottom:.6rem;
+  }
+  .valcard p{ margin:0; font-size:.87rem; line-height:1.55; }
+  .takeaway{
+    margin:18px 0 0; padding:18px 20px; border-radius:5px;
+    background:var(--rule-2); font-size:.94rem; line-height:1.6; color:var(--ink-2);
+  }
+  .takeaway b{ color:var(--ink); }
+  .contrast{ display:flex; flex-direction:column; gap:12px; }
+  .ct-block{ padding:16px 18px; border-radius:5px; border:1px solid var(--rule); background:var(--card); }
+  .ct-before{ border-left:3px solid var(--ink-3); }
+  .ct-after{ border-left:3px solid var(--sim); }
+  .ct-h{
+    font:640 .64rem/1 ui-monospace,Menlo,monospace; letter-spacing:.12em;
+    text-transform:uppercase; margin-bottom:.6rem; color:var(--ink-3);
+  }
+  .ct-after .ct-h{ color:var(--sim); }
+  .ct-block p{ margin:0; font-size:.84rem; line-height:1.55; }
+  .handoff-inline{ margin-top:34px; }
+
+  @media (max-width:1080px){
+    .rights-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .valuewrap{ grid-template-columns:1fr; }
+    .valgrid{ grid-template-columns:1fr; }
+  }
+
+  /* ---- contents drawer: collapsed by default, content is full width ---- */
+  .shell{ display:block; }
+
+  details.nav{
+    position:sticky; top:0; z-index:30; margin:0 0 8px;
+    background:color-mix(in srgb,var(--paper) 92%,transparent);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--rule);
+  }
+  details.nav > summary{
+    cursor:pointer; list-style:none; padding:12px 2px;
+    display:flex; align-items:center; gap:10px;
+    font:600 .7rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
+  }
+  details.nav > summary::-webkit-details-marker{ display:none; }
+  details.nav > summary::before{
+    content:"\2630"; font-size:.95rem; letter-spacing:0; color:var(--accent);
+  }
+  details[open].nav > summary::before{ content:"\2715"; }
+  details.nav > summary:hover{ color:var(--ink); }
+  details.nav > summary .hint{
+    margin-left:auto; letter-spacing:.04em; text-transform:none;
+    font-weight:500; opacity:.7;
+  }
+
+  .navpanel{ padding:6px 0 20px; }
+  .navpanel h4{
+    font:600 .64rem/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--ink-3); margin:14px 0 8px;
+  }
+  .navpanel ol{
+    list-style:none; margin:0; padding:0;
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:2px 18px;
+  }
+  .navpanel a{
+    display:grid; grid-template-columns:24px 1fr; gap:8px; align-items:baseline;
+    padding:6px 8px; border-radius:3px; text-decoration:none;
+    font-size:.85rem; color:var(--ink-2);
+  }
+  .navpanel a:hover{ background:var(--rule-2); color:var(--ink); }
+  .navpanel a .p{
+    font:600 .7rem/1.4 ui-monospace,Menlo,monospace; color:var(--ink-3);
+    font-variant-numeric:tabular-nums;
+  }
+  .navpanel a.apx{ opacity:.68; font-style:italic; }
+  .navpanel a:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+
+
+  .apxbreak{ margin:64px 0 0; padding:26px 0 4px; border-top:2px solid var(--rule); }
+  .apxbreak h2{ font-size:1.05rem; color:var(--ink-3); letter-spacing:.05em; text-transform:uppercase; }
+  .apxbreak p{ margin-top:.5rem; font-size:.9rem; }
+
+  /* ---- primer ---- */
+  .primer{ margin:26px 0 0; padding:20px 22px; background:var(--card); border:1px solid var(--rule); border-radius:4px; }
+  .primer h3{ margin:0 0 12px; font-size:.96rem; }
+  .primer dl{ margin:0; display:grid; grid-template-columns:auto 1fr; gap:5px 16px; font-size:.86rem; }
+  .primer dt{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-weight:600; color:var(--accent); white-space:nowrap; }
+  .primer dd{ margin:0; color:var(--ink-2); }
+
+  /* ---- key callout ---- */
+  .keypoint{
+    margin:22px 0 0; padding:16px 20px; border-radius:4px;
+    background:var(--card); border:1px solid var(--rule); border-left:3px solid var(--poc);
+  }
+  .keypoint b{ color:var(--ink); }
+  .keypoint p{ margin:0; font-size:.9rem; }
+
+  /* ---- collapsible tables ---- */
+  details.bigtable{ margin:18px 0 6px; }
+  details.bigtable > summary{
+    cursor:pointer; padding:10px 14px; border:1px solid var(--rule); border-radius:4px;
+    background:var(--card); font:600 .82rem/1.3 ui-sans-serif,system-ui,sans-serif; color:var(--ink-2);
+    list-style:none;
+  }
+  details.bigtable > summary::-webkit-details-marker{ display:none; }
+  details.bigtable > summary::before{ content:"\25B8  "; color:var(--accent); }
+  details[open].bigtable > summary::before{ content:"\25BE  "; }
+  details.bigtable > summary:hover{ color:var(--ink); border-color:var(--ink-3); }
+  details.bigtable .tablewrap{ margin-top:8px; }
+
+
+  @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
+  @media (max-width:640px){
+    .wrap{ padding:0 16px 80px; }
+    .vhead{ flex-wrap:wrap; gap:9px; }
+  }
+</style>
+
+<div class="wrap">
+
+<header class="exec">
+  <div class="exec-copy">
+    <div class="eyebrow">Healthcare commercialisation decision intelligence</div>
+    <h1>From approval to adoption,<br>every HCP interaction has to count.</h1>
+    <p class="lede">Commercial teams must convert clinical evidence, approved content, market-access context and omnichannel engagement signals into one timely, compliant and explainable decision.</p>
+
+    <div class="prodcard">
+      <div class="prodname">Omnichannel HCP Personalization<br>&amp; Next-Best-Action Platform</div>
+      <p class="proddesc">An end-to-end machine-learning system that determines which HCP to engage, what action to recommend, which approved content to use, through which channel and at what time — and measures whether the action created incremental value.</p>
+      <div class="prodlabel">End-to-end machine-learning system · architecture specification</div>
+    </div>
+
+    <blockquote class="execquote">
+      The objective is not more commercial activity.<br>
+      <b>It is better allocation of commercial effort.</b>
+    </blockquote>
+  </div>
+
+  <figure class="exec-viz">
+    <svg viewBox="0 0 470 700" role="img" aria-labelledby="vizt vizd">
+      <title id="vizt">The approval-to-adoption gap</title>
+      <desc id="vizd">Clinical evidence and regulatory approval are followed by a gap covering market access and HCP engagement, bridged by the next-best-action platform, leading to appropriate patient adoption.</desc>
+
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="var(--ink-3)"/>
+        </marker>
+        <marker id="arv" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="var(--sim)"/>
+        </marker>
+      </defs>
+
+      <!-- 1 · clinical evidence -->
+      <g class="vz-node">
+        <rect x="120" y="6" width="230" height="52" rx="5" fill="var(--real-bg)" stroke="var(--real)"/>
+        <g stroke="var(--real)" stroke-width="1.5" fill="none">
+          <circle cx="146" cy="26" r="4.5"/><circle cx="160" cy="40" r="4.5"/><circle cx="132" cy="40" r="4.5"/>
+          <path d="M146 30.5 L160 35.5 M146 30.5 L132 35.5 M136.5 40 L155.5 40"/>
+        </g>
+        <text x="176" y="28" class="vz-t">Clinical evidence</text>
+        <text x="176" y="45" class="vz-s">trials, publications, real-world data</text>
+      </g>
+      <line x1="235" y1="58" x2="235" y2="84" stroke="var(--ink-3)" stroke-width="1.4" marker-end="url(#ar)"/>
+
+      <!-- 2 · regulatory approval -->
+      <g class="vz-node">
+        <rect x="120" y="86" width="230" height="52" rx="5" fill="var(--poc-bg)" stroke="var(--poc)"/>
+        <path d="M146 96 l13 5 v10 c0 7 -6 12 -13 15 c-7 -3 -13 -8 -13 -15 v-10 z" fill="none" stroke="var(--poc)" stroke-width="1.5"/>
+        <path d="M140 111 l4 4 l8 -9" fill="none" stroke="var(--poc)" stroke-width="1.6" stroke-linecap="round"/>
+        <text x="176" y="108" class="vz-t">Regulatory approval</text>
+        <text x="176" y="125" class="vz-s">label, indication, MLR-approved content</text>
+      </g>
+
+      <!-- the gap -->
+      <rect x="8" y="152" width="454" height="386" rx="8" fill="none" stroke="var(--poc)" stroke-width="1.4" stroke-dasharray="7 5" opacity=".85"/>
+      <rect x="22" y="142" width="182" height="20" rx="4" fill="var(--paper)"/>
+      <text x="30" y="156" class="vz-gap">THE GAP · WHERE VALUE IS WON OR LOST</text>
+
+      <!-- gap terrain -->
+      <g class="vz-node">
+        <rect x="30" y="178" width="184" height="44" rx="5" fill="var(--real-bg)" stroke="var(--real)"/>
+        <g stroke="var(--real)" stroke-width="1.5" fill="none">
+          <circle cx="52" cy="200" r="5"/><path d="M57 200 h14 m-4 0 v5 m8 -5 v7"/>
+        </g>
+        <text x="84" y="197" class="vz-t">Market access</text>
+        <text x="84" y="212" class="vz-s">formulary, reimbursement</text>
+      </g>
+      <g class="vz-node">
+        <rect x="256" y="178" width="184" height="44" rx="5" fill="var(--real-bg)" stroke="var(--real)"/>
+        <g stroke="var(--real)" stroke-width="1.5" fill="none">
+          <circle cx="278" cy="195" r="5.5"/><path d="M270 213 c0 -8 16 -8 16 0"/>
+        </g>
+        <text x="310" y="197" class="vz-t">HCP education</text>
+        <text x="310" y="212" class="vz-s">and engagement</text>
+      </g>
+
+      <!-- six inputs -->
+      <text x="30" y="248" class="vz-lbl">SIX COMMERCIAL INPUTS</text>
+      <g class="vz-chip"><rect x="30" y="258" width="196" height="30" rx="4"/><text x="42" y="277">HCP profile and affiliation</text></g>
+      <g class="vz-chip"><rect x="244" y="258" width="196" height="30" rx="4"/><text x="256" y="277">Approved content and MLR status</text></g>
+      <g class="vz-chip"><rect x="30" y="294" width="196" height="30" rx="4"/><text x="42" y="313">Access barriers</text></g>
+      <g class="vz-chip"><rect x="244" y="294" width="196" height="30" rx="4"/><text x="256" y="313">Consent and suppression</text></g>
+      <g class="vz-chip"><rect x="30" y="330" width="196" height="30" rx="4"/><text x="42" y="349">Channel history</text></g>
+      <g class="vz-chip"><rect x="244" y="330" width="196" height="30" rx="4"/><text x="256" y="349">Recent engagement and intent</text></g>
+
+      <path d="M128 362 v14" stroke="var(--sim)" stroke-width="1.3" marker-end="url(#arv)"/>
+      <path d="M342 362 v14" stroke="var(--sim)" stroke-width="1.3" marker-end="url(#arv)"/>
+
+      <!-- platform -->
+      <g>
+        <rect x="30" y="382" width="410" height="76" rx="6" fill="var(--sim-bg)" stroke="var(--sim)" stroke-width="1.8"/>
+        <g stroke="var(--sim)" stroke-width="1.5" fill="none">
+          <circle cx="60" cy="412" r="3.4"/><circle cx="60" cy="434" r="3.4"/><circle cx="82" cy="423" r="3.4"/>
+          <path d="M60 415.4 v15.2 M63.2 413.6 L78.9 421.2 M63.2 432.4 L78.9 424.8"/>
+        </g>
+        <text x="100" y="411" class="vz-pt">Next-Best-Action Platform</text>
+        <text x="100" y="428" class="vz-s">retrieve · rank · adjust for utility · enforce eligibility</text>
+        <text x="100" y="444" class="vz-s">explain · measure incrementality</text>
+      </g>
+
+      <path d="M235 458 v22" stroke="var(--sim)" stroke-width="1.6" marker-end="url(#arv)"/>
+
+      <!-- output -->
+      <g>
+        <rect x="52" y="486" width="366" height="40" rx="5" fill="var(--card)" stroke="var(--sim)" stroke-width="1.8"/>
+        <text x="235" y="511" class="vz-out">ONE RANKED, ELIGIBLE AND EXPLAINABLE ACTION</text>
+      </g>
+
+      <line x1="235" y1="538" x2="235" y2="566" stroke="var(--ink-3)" stroke-width="1.4" marker-end="url(#ar)"/>
+
+      <!-- 5 · adoption -->
+      <g class="vz-node">
+        <rect x="86" y="568" width="298" height="56" rx="5" fill="var(--real-bg)" stroke="var(--real)" stroke-width="1.6"/>
+        <g stroke="var(--real)" stroke-width="1.6" fill="none">
+          <path d="M112 604 l9 -11 l8 7 l13 -18"/><path d="M136 582 h8 v8"/>
+        </g>
+        <text x="160" y="592" class="vz-t">Appropriate patient adoption</text>
+        <text x="160" y="609" class="vz-s">the outcome the commercial system exists to serve</text>
+      </g>
+
+      <text x="235" y="656" class="vz-cap" text-anchor="middle">Approval does not produce adoption.</text>
+      <text x="235" y="674" class="vz-cap2" text-anchor="middle">The gap is crossed one HCP decision at a time.</text>
+    </svg>
+  </figure>
+</header>
+
+<section class="pains">
+  <h2 class="secttl">Where commercial value is lost</h2>
+  <div class="paingrid">
+    <article class="pain">
+      <h3>Speed to adoption</h3>
+      <p>Once a therapy is approved, commercial teams have a limited window to establish awareness, communicate the evidence, address access barriers and build appropriate adoption. Slow or poorly coordinated execution weakens launch momentum.</p>
+      <div class="impact">Lost launch velocity</div>
+    </article>
+    <article class="pain">
+      <h3>Relevance at scale</h3>
+      <p>HCP profiles, content, consent, access, campaign and engagement data sit across disconnected systems. The right HCP can therefore receive the wrong message, through the wrong channel, at the wrong point in the journey.</p>
+      <div class="impact">Fragmented decision-making</div>
+    </article>
+    <article class="pain">
+      <h3>Commercial efficiency</h3>
+      <p>Field capacity, marketing budgets and HCP attention are finite. Every unnecessary visit, repeated email or underused content asset consumes budget and increases fatigue and opt-out risk.</p>
+      <div class="impact">Wasted commercial effort</div>
+    </article>
+  </div>
+</section>
+
+<section class="opp">
+  <h2>One connected decision for every planning cycle</h2>
+
+  <div class="tuple">
+    <span>HCP</span><i>×</i><span>Action</span><i>×</i><span>Approved Content</span><i>×</i><span>Channel</span><i>×</i><span>Time Window</span>
+  </div>
+
+  <div class="oppgrid">
+    <div class="oppcol">
+      <h4>Inputs</h4>
+      <ul class="chips">
+        <li>HCP profile</li><li>Commercial context</li><li>Approved content</li><li>Access barriers</li>
+        <li>Consent</li><li>Channel history</li><li>Recent intent</li><li>Field capacity</li>
+      </ul>
+    </div>
+    <div class="oppcol">
+      <h4>Decision process</h4>
+      <ol class="steps">
+        <li>Retrieve</li><li>Rank</li><li>Adjust for business utility</li>
+        <li>Enforce eligibility</li><li>Explain</li><li>Measure incrementality</li>
+      </ol>
+    </div>
+    <div class="oppcol">
+      <h4>Optimisation objective</h4>
+      <div class="obj">
+        <div class="objline pos">Expected incremental value</div>
+        <div class="objline neg">− fatigue</div>
+        <div class="objline neg">− opt-out risk</div>
+        <div class="objline neg">− operational cost</div>
+      </div>
+      <h4 class="constraint-h">Mandatory constraint</h4>
+      <p class="constraint">Approval, effective date, segment, channel permission, consent and contact-frequency compliance.</p>
+    </div>
+  </div>
+
+  <p class="position"><span>This is not another campaign dashboard.</span> It is a decision system for allocating constrained commercial resources to the interactions most likely to create incremental value.</p>
+</section>
+
+<details class="glossary">
+  <summary>Domain terminology used in the architecture</summary>
+  <div class="glossbody">
+    <dl>
+      <dt>HCP</dt><dd>Healthcare professional — the prescriber this system recommends to.</dd>
+      <dt>HCO</dt><dd>Healthcare organisation — the hospital, clinic or practice an HCP is affiliated to.</dd>
+      <dt>KeyMessage</dt><dd>The smallest approved unit of content: a single claim, a safety block, one data figure.</dd>
+      <dt>ContentModule</dt><dd>A group of key messages approved to appear together.</dd>
+      <dt>Campaign</dt><dd>The campaign-level container that delivers content modules through a channel.</dd>
+      <dt>MLR</dt><dd>Medical, legal and regulatory review. Approves content and sets its expiry date. Authoritative — the platform reads its decisions and cannot override them.</dd>
+      <dt>NBA</dt><dd>Next-best-action — the decision this platform produces.</dd>
+      <dt>Eligibility</dt><dd>The deterministic decision that an HCP–action–content–channel–window combination satisfies approval, effective date, segment, channel permission, consent and contact-frequency rules, and is therefore servable. Distinct from relevance, and evaluated separately.</dd>
+    </dl>
+    <div class="refstrip">
+      <div><b>Channels</b> <code>FIELD_DETAIL</code><code>BROADCAST_EMAIL</code><code>REP_EMAIL</code><code>THIRD_PARTY_MEDIA</code><code>WEB_PORTAL</code><code>VIRTUAL_MEETING</code><code>EVENT</code></div>
+      <div><b>Segments</b> <code>EarlyAdopter</code><code>GrowthPotential</code><code>Established</code></div>
+      <div><b>Approval states</b> <code>Approved</code><code>InReview</code><code>Expired</code> — only <code>Approved</code> is servable</div>
+    </div>
+  </div>
+</details>
+
+<div class="handoff">
+  <div class="handoff-eyebrow">From commercial problem to operating boundary</div>
+  <p>Before a model can recommend an action, the platform must know which systems provide the evidence, who owns the objective and which decisions it is never permitted to override.</p>
+  <svg class="cue" viewBox="0 0 24 34" aria-hidden="true"><path d="M12 2 v26 M5 22 l7 7 l7 -7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</div>
+
+<div class="shell">
+<details class="nav">
+  <summary>Contents<span class="hint">14 sections + 4 appendix</span></summary>
+  <div class="navpanel">
+    <ol>
+      <li><a href="#v01"><span class="p">01</span><span>System context</span></a></li>
+      <li><a href="#v02"><span class="p">02</span><span>One recommendation contract</span></a></li>
+      <li><a href="#v15"><span class="p">03</span><span>Data, labels and features</span></a></li>
+      <li><a href="#v07"><span class="p">04</span><span>HCP-360 semantic model</span></a></li>
+      <li><a href="#v03"><span class="p">05</span><span>End-to-end architecture</span></a></li>
+      <li><a href="#v04"><span class="p">06</span><span>Candidate generation</span></a></li>
+      <li><a href="#v20"><span class="p">07</span><span>Serving and in-session adaptation</span></a></li>
+      <li><a href="#v05"><span class="p">08</span><span>Ranking, utility and eligibility</span></a></li>
+      <li><a href="#v08"><span class="p">09</span><span>Validation strategy</span></a></li>
+      <li><a href="#v10"><span class="p">10</span><span>Online learning</span></a></li>
+      <li><a href="#v11"><span class="p">11</span><span>Causal measurement</span></a></li>
+      <li><a href="#v12"><span class="p">12</span><span>Explanation layer</span></a></li>
+      <li><a href="#v13"><span class="p">13</span><span>Observability</span></a></li>
+      <li><a href="#v18"><span class="p">14</span><span>Results, limits and roadmap</span></a></li>
+    </ol>
+    <h4>Appendix</h4>
+    <ol>
+      <li><a class="apx" href="#v19"><span class="p">A1</span><span>Scale, throughput and SLOs</span></a></li>
+      <li><a class="apx" href="#v09"><span class="p">A2</span><span>Cross-channel transfer</span></a></li>
+      <li><a class="apx" href="#v14"><span class="p">A3</span><span>Repository map</span></a></li>
+      <li><a class="apx" href="#v17"><span class="p">A4</span><span>Build sequencing</span></a></li>
+    </ol>
+  </div>
+</details>
+<main>
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v01">
+  <div class="vhead"><span class="vnum">View 01</span><span class="alt">L0 · Context</span></div>
+
+  <div class="hook">
+    <div class="hook-label">Commercial operating boundary</div>
+    <h2 class="hook-title">One governed decision loop from approved content to HCP engagement</h2>
+    <p class="hook-sub">The platform sits between content governance, commercial strategy, field execution and HCP response. It does not decide what is allowed, and it does not replace the field team — it turns fragmented signals into one ranked, eligible and explainable action.</p>
+    <p class="hook-line">What matters is not more outreach — it is coordinated, compliant and measurable commercial action.</p>
+  </div>
+
+  <div class="journey">
+    <svg viewBox="0 0 1160 172" role="img" aria-label="Commercial journey from approved evidence through decision intelligence to HCP engagement and outcome">
+      <defs>
+        <marker id="jarr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="var(--ink-3)"/>
+        </marker>
+      </defs>
+
+      <g class="jr">
+        <rect x="8" y="30" width="196" height="96" rx="6" class="jr-box"/>
+        <g class="jr-ico" transform="translate(94,52)"><path d="M2 2 h16 l6 6 v22 h-22 z"/><path d="M18 2 v6 h6"/><path d="M7 18 l4 4 l8 -9"/></g>
+        <text x="106" y="106" class="jr-t">Approved evidence</text>
+      </g>
+      <line x1="204" y1="78" x2="228" y2="78" class="jr-line" marker-end="url(#jarr)"/>
+
+      <g class="jr">
+        <rect x="232" y="30" width="196" height="96" rx="6" class="jr-box"/>
+        <g class="jr-ico" transform="translate(318,52)"><circle cx="13" cy="16" r="13"/><circle cx="13" cy="16" r="7"/><circle cx="13" cy="16" r="1.6" class="fill"/></g>
+        <text x="330" y="106" class="jr-t">Commercial objective</text>
+      </g>
+      <line x1="428" y1="78" x2="452" y2="78" class="jr-line" marker-end="url(#jarr)"/>
+
+      <g class="jr jr-hero">
+        <rect x="456" y="14" width="248" height="128" rx="7" class="jr-box-hero"/>
+        <g class="jr-ico-hero" transform="translate(566,42)"><path d="M4 6 h24 M4 15 h24 M4 24 h14"/><circle cx="27" cy="24" r="4.5"/></g>
+        <text x="580" y="100" class="jr-t-hero">Decision intelligence</text>
+        <text x="580" y="120" class="jr-s">ranked · eligible · explainable</text>
+      </g>
+      <line x1="704" y1="78" x2="728" y2="78" class="jr-line" marker-end="url(#jarr)"/>
+
+      <g class="jr">
+        <rect x="732" y="30" width="196" height="96" rx="6" class="jr-box"/>
+        <g class="jr-ico" transform="translate(818,52)"><rect x="2" y="3" width="22" height="26" rx="2.5"/><path d="M7 11 h12 M7 18 h12 M7 24 h7"/></g>
+        <text x="830" y="106" class="jr-t">Field execution</text>
+      </g>
+      <line x1="928" y1="78" x2="952" y2="78" class="jr-line" marker-end="url(#jarr)"/>
+
+      <g class="jr">
+        <rect x="956" y="30" width="196" height="96" rx="6" class="jr-box"/>
+        <g class="jr-ico" transform="translate(1042,52)"><circle cx="13" cy="9" r="6.5"/><path d="M2 30 c0 -11 22 -11 22 0"/></g>
+        <text x="1054" y="106" class="jr-t">HCP engagement</text>
+      </g>
+
+      <text x="580" y="164" class="jr-cap" text-anchor="middle">The platform's job is to connect approved evidence and business objectives to field execution and measured HCP response.</text>
+    </svg>
+  </div>
+
+  <div class="opmodel">
+    <svg viewBox="0 0 1300 640" role="img" aria-label="Operating model: content and governance inputs on the left, decision intelligence platform in the centre, execution systems, healthcare professional and commercial leadership on the right">
+      <defs>
+        <marker id="oa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--ink-3)"/></marker>
+        <marker id="oav" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--sim)"/></marker>
+        <marker id="oam" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--poc)"/></marker>
+      </defs>
+
+      <text x="16" y="18" class="om-zone">Inputs and authorities</text>
+      <text x="650" y="18" class="om-zone om-zone-c" text-anchor="middle">Decision intelligence</text>
+      <text x="1284" y="18" class="om-zone" text-anchor="end">Activation, response and governance</text>
+
+      <!-- ═══ LEFT ═══ -->
+      <g class="om-card">
+        <rect class="om-bg" x="16" y="34" width="270" height="126" rx="6"/>
+        <g class="om-ico" transform="translate(36,56)"><path d="M2 4 h13 l5 5 v16 h-18 z"/><path d="M15 4 v5 h5"/><path d="M6 25 v4 h18 v-16"/></g>
+        <text x="72" y="66" class="om-t">Brand &amp; Content Operations</text>
+        <text x="72" y="86" class="om-d">Campaigns · content modules</text>
+        <text x="72" y="102" class="om-d">approved key messages</text>
+        <rect class="om-bar" x="16" y="122" width="270" height="38"/>
+        <text x="32" y="146" class="om-lb">Supplies approved content inventory</text>
+      </g>
+
+      <g class="om-card om-auth">
+        <rect class="om-bg om-bg-a" x="16" y="188" width="270" height="146" rx="6"/>
+        <g class="om-ico om-ico-a" transform="translate(36,210)"><path d="M11 2 l10 3.6 v8.4 c0 6 -4.6 10 -10 12.4 c-5.4 -2.4 -10 -6.4 -10 -12.4 v-8.4 z"/><path d="M6.5 14 l3.6 3.6 l6.4 -7.2"/></g>
+        <text x="72" y="220" class="om-t">MLR &amp; Content Governance</text>
+        <text x="72" y="240" class="om-d">Approval state · effective date</text>
+        <text x="72" y="256" class="om-d">expiry · channel permission</text>
+        <g class="om-badge"><rect x="72" y="270" width="104" height="20" rx="3"/><text x="82" y="284">AUTHORITATIVE</text></g>
+        <rect class="om-bar om-bar-a" x="16" y="296" width="270" height="38"/>
+        <text x="32" y="320" class="om-lb om-lb-a">Supplies authoritative eligibility state</text>
+      </g>
+
+      <g class="om-card">
+        <rect class="om-bg" x="16" y="362" width="270" height="126" rx="6"/>
+        <g class="om-ico" transform="translate(36,384)"><rect x="2" y="2" width="18" height="23" rx="2"/><path d="M6 9 h10 M6 15 h10 M6 21 h6"/></g>
+        <text x="72" y="394" class="om-t">Field Representative &amp; CRM</text>
+        <text x="72" y="414" class="om-d">Territory context · field capacity</text>
+        <text x="72" y="430" class="om-d">planning-cycle request</text>
+        <rect class="om-bar" x="16" y="450" width="270" height="38"/>
+        <text x="32" y="474" class="om-lb">Requests plan · executes in the field</text>
+      </g>
+
+      <!-- left connectors -->
+      <line x1="286" y1="97" x2="466" y2="97" class="om-line" marker-end="url(#oa)"/>
+      <text x="376" y="89" class="om-al" text-anchor="middle">Approved content and metadata</text>
+
+      <line x1="286" y1="255" x2="466" y2="255" class="om-line om-line-a" marker-end="url(#oam)"/>
+      <text x="376" y="235" class="om-al om-al-a" text-anchor="middle">Authoritative approval</text>
+      <text x="376" y="247" class="om-al om-al-a" text-anchor="middle">and eligibility state</text>
+
+      <line x1="286" y1="412" x2="466" y2="412" class="om-line" marker-end="url(#oa)"/>
+      <text x="376" y="392" class="om-al" text-anchor="middle">Planning request</text>
+      <text x="376" y="404" class="om-al" text-anchor="middle">and field context</text>
+
+      <line x1="466" y1="462" x2="286" y2="462" class="om-line om-line-v" marker-end="url(#oav)"/>
+      <text x="376" y="482" class="om-al om-al-v" text-anchor="middle">Ranked eligible actions</text>
+      <text x="376" y="494" class="om-al om-al-v" text-anchor="middle">and rationale</text>
+
+      <!-- ═══ CENTRE ═══ -->
+      <g class="om-plat">
+        <rect class="om-pbg" x="470" y="34" width="360" height="500" rx="8"/>
+        <g class="om-inset"><rect x="492" y="54" width="140" height="20" rx="3"/><text x="502" y="68">DECISION INTELLIGENCE</text></g>
+        <text x="650" y="110" class="om-pt" text-anchor="middle">Omnichannel HCP Personalization</text>
+        <text x="650" y="132" class="om-pt" text-anchor="middle">&amp; Next-Best-Action Platform</text>
+        <text x="650" y="156" class="om-ps" text-anchor="middle">One ranked, eligible and explainable</text>
+        <text x="650" y="172" class="om-ps" text-anchor="middle">recommendation per planning cycle</text>
+
+        <g class="om-step"><rect x="492" y="200" width="316" height="30" rx="4"/><text x="508" y="220">1 · Retrieve</text><text x="792" y="220" class="om-stepd" text-anchor="end">eligible action space</text></g>
+        <g class="om-step"><rect x="492" y="236" width="316" height="30" rx="4"/><text x="508" y="256">2 · Rank</text><text x="792" y="256" class="om-stepd" text-anchor="end">engagement value</text></g>
+        <g class="om-step"><rect x="492" y="272" width="316" height="30" rx="4"/><text x="508" y="292">3 · Adjust for utility</text><text x="792" y="292" class="om-stepd" text-anchor="end">fatigue · cost</text></g>
+        <g class="om-step om-step-a"><rect x="492" y="308" width="316" height="30" rx="4"/><text x="508" y="328">4 · Verify eligibility</text><text x="792" y="328" class="om-stepd om-stepd-a" text-anchor="end">non-overridable</text></g>
+        <g class="om-step"><rect x="492" y="344" width="316" height="30" rx="4"/><text x="508" y="364">5 · Explain</text><text x="792" y="364" class="om-stepd" text-anchor="end">signals · proof</text></g>
+
+        <rect class="om-contract" x="492" y="392" width="316" height="56" rx="4"/>
+        <text x="650" y="414" class="om-ct" text-anchor="middle">HCP × Action × Approved Content</text>
+        <text x="650" y="434" class="om-ct" text-anchor="middle">× Channel × Time Window</text>
+
+        <text x="650" y="478" class="om-note" text-anchor="middle">The model prioritises only within</text>
+        <text x="650" y="494" class="om-note" text-anchor="middle">the permitted action space.</text>
+        <text x="650" y="514" class="om-note2" text-anchor="middle">It never authors content or overrides approval.</text>
+      </g>
+
+      <!-- right connectors -->
+      <line x1="830" y1="112" x2="1010" y2="112" class="om-line" marker-end="url(#oa)"/>
+      <text x="920" y="92" class="om-al" text-anchor="middle">Approved action through</text>
+      <text x="920" y="104" class="om-al" text-anchor="middle">permitted execution systems</text>
+
+      <line x1="1010" y1="368" x2="830" y2="368" class="om-line om-dash" marker-end="url(#oa)"/>
+      <text x="920" y="348" class="om-al" text-anchor="middle">Engagement and outcome signals</text>
+      <text x="920" y="360" class="om-al om-al-dim" text-anchor="middle">delayed · hours to days</text>
+
+      <line x1="830" y1="452" x2="1010" y2="452" class="om-line om-line-v" marker-end="url(#oav)"/>
+      <text x="920" y="432" class="om-al om-al-v" text-anchor="middle">Performance · uplift</text>
+      <text x="920" y="444" class="om-al om-al-v" text-anchor="middle">and suppression</text>
+
+      <line x1="1010" y1="504" x2="830" y2="504" class="om-line" marker-end="url(#oa)"/>
+      <text x="920" y="524" class="om-al" text-anchor="middle">Objectives and</text>
+      <text x="920" y="536" class="om-al" text-anchor="middle">policy parameters</text>
+
+      <!-- ═══ RIGHT ═══ -->
+      <g class="om-card">
+        <rect class="om-bg" x="1014" y="34" width="270" height="176" rx="6"/>
+        <g class="om-ico" transform="translate(1034,56)"><circle cx="4" cy="5" r="3"/><circle cx="4" cy="21" r="3"/><circle cx="19" cy="13" r="3"/><path d="M6.8 6.5 L16.2 11.5 M6.8 19.5 L16.2 14.5"/></g>
+        <text x="1070" y="66" class="om-t">Execution Systems</text>
+        <text x="1070" y="86" class="om-d">Field CRM · marketing automation</text>
+        <text x="1070" y="102" class="om-d">digital platforms · partners</text>
+        <g class="om-chan">
+          <text x="1032" y="128">FIELD_DETAIL · REP_EMAIL</text>
+          <text x="1032" y="144">BROADCAST_EMAIL · THIRD_PARTY_MEDIA</text>
+          <text x="1032" y="160">WEB_PORTAL · VIRTUAL_MEETING · EVENT</text>
+        </g>
+        <rect class="om-bar" x="1014" y="172" width="270" height="38"/>
+        <text x="1030" y="196" class="om-lb">Delivers approved action to the HCP</text>
+      </g>
+
+      <line x1="1149" y1="210" x2="1149" y2="240" class="om-line" marker-end="url(#oa)"/>
+
+      <g class="om-card">
+        <rect class="om-bg" x="1014" y="246" width="270" height="152" rx="6"/>
+        <g class="om-ico" transform="translate(1034,268)"><circle cx="10" cy="7" r="5.5"/><path d="M2 26 c0 -9 16 -9 16 0"/></g>
+        <text x="1070" y="278" class="om-t">Healthcare Professional</text>
+        <text x="1070" y="298" class="om-d">Receives approved engagement</text>
+        <text x="1070" y="314" class="om-d">and generates response signals</text>
+        <rect class="om-bar" x="1014" y="336" width="270" height="62"/>
+        <text x="1030" y="358" class="om-lb">Return signals</text>
+        <text x="1030" y="376" class="om-lb2">Impression · open · click · dwell</text>
+        <text x="1030" y="390" class="om-lb2">meeting · opt-out</text>
+      </g>
+
+      <g class="om-card">
+        <rect class="om-bg" x="1014" y="422" width="270" height="152" rx="6"/>
+        <g class="om-ico" transform="translate(1034,444)"><rect x="2" y="2" width="19" height="19" rx="2"/><path d="M6 16 v-5 M11 16 v-9 M16 16 v-7"/></g>
+        <text x="1070" y="454" class="om-t">Commercial Analytics</text>
+        <text x="1070" y="472" class="om-t">&amp; Leadership</text>
+        <text x="1070" y="492" class="om-d">Objectives · experiments</text>
+        <text x="1070" y="508" class="om-d">guardrails · performance</text>
+        <rect class="om-bar" x="1014" y="522" width="270" height="52"/>
+        <text x="1030" y="542" class="om-lb">Sets optimisation policy</text>
+        <text x="1030" y="560" class="om-lb2">and owns business outcomes</text>
+      </g>
+
+      <text x="650" y="616" class="om-cap" text-anchor="middle">Solid lines are operational flows. The dashed line is delayed engagement feedback — outcomes return hours to days after the action.</text>
+    </svg>
+  </div>
+
+  <div class="rights">
+    <div class="rights-h">Who controls what</div>
+    <div class="rights-grid">
+      <div class="right-col right-a">
+        <div class="rc-who">MLR &amp; Governance</div>
+        <div class="rc-what">Controls <b>what is permitted</b></div>
+      </div>
+      <div class="right-col right-t">
+        <div class="rc-who">Commercial Leadership</div>
+        <div class="rc-what">Controls <b>what is optimised</b></div>
+      </div>
+      <div class="right-col right-v">
+        <div class="rc-who">Machine Learning Platform</div>
+        <div class="rc-what">Controls <b>what is prioritised</b> inside the eligible action set</div>
+      </div>
+      <div class="right-col right-t">
+        <div class="rc-who">Field Representative</div>
+        <div class="rc-what">Controls <b>what is executed</b> in the customer interaction</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="valuewrap">
+    <div class="value">
+      <div class="rights-h">Why this matters</div>
+      <div class="valgrid">
+        <div class="valcard"><span class="vn">01</span><p>Reduces fragmented channel planning.</p></div>
+        <div class="valcard"><span class="vn">02</span><p>Improves allocation of field and marketing effort.</p></div>
+        <div class="valcard"><span class="vn">03</span><p>Creates a measurable feedback loop from action to incremental impact.</p></div>
+      </div>
+      <p class="takeaway"><b>Key takeaway.</b> The platform does not author content, override approval or replace the field team. It coordinates approved evidence, business goals and current HCP context into one auditable recommendation.</p>
+    </div>
+
+    <aside class="contrast">
+      <div class="ct-block ct-before">
+        <div class="ct-h">Without a decision layer</div>
+        <p>Static segmentation · disconnected channel logic · manual field prioritisation</p>
+      </div>
+      <div class="ct-block ct-after">
+        <div class="ct-h">With this platform</div>
+        <p>One governed recommendation loop across content, channels, field execution and outcomes</p>
+      </div>
+    </aside>
+  </div>
+
+  <div class="handoff handoff-inline">
+    <div class="handoff-eyebrow">From operating model to decision contract</div>
+    <p>Now that the system boundary, ownership and feedback loop are clear, the next question is: what exactly is the unit of decision this platform produces?</p>
+    <svg class="cue" viewBox="0 0 24 34" aria-hidden="true"><path d="M12 2 v26 M5 22 l7 7 l7 -7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+</section>
+
+
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v02">
+  <div class="vhead"><span class="vnum">View 02</span><span class="alt">L0 · Decision</span></div>
+  <h2>The six questions resolve into one recommendation</h2>
+  <p class="col">Six questions, one scored tuple. Building them as separate models is how a channel decision ends up contradicting a content decision.</p>
+
+  <div class="diagram">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'fontFamily':'ui-monospace,SFMono-Regular,Menlo,monospace','fontSize':'13px','lineColor':'#5C6675','primaryTextColor':'#0D1117'}}}%%
+flowchart TB
+  subgraph Q["Six connected questions"]
+    direction LR
+    q1["1 · Which HCP?<br/><i>Next-Best-HCP</i><br/>ranker + territory constraint"]
+    q2["2 · What action?<br/><i>Next-Best-Action</i><br/>multi-objective ranker"]
+    q3["3 · Which content?<br/><i>Next-Best-Content</i><br/>two-tower + graph retrieval"]
+    q4["4 · Which channel?<br/><i>Next-Best-Channel</i><br/>contextual bandit"]
+    q5["5 · When?<br/><i>Next-Best-Time</i><br/>survival / hazard model"]
+    q6["6 · Why?<br/><i>Explanation</i><br/>graph path + feature attribution"]
+  end
+
+  q1 --> rec
+  q2 --> rec
+  q3 --> rec
+  q4 --> rec
+  q5 --> rec
+  q6 --> rec
+
+  rec["<b>One recommendation record</b><br/>hcp_id · action_type · content_id<br/>channel · send_window · score<br/>rationale · eligibility_proof"]
+  rec --> crm["CRM surface<br/>rep worklist"]
+
+  classDef model fill:#EBE8FA,stroke:#5B4BC4,stroke-width:1.6px,color:#2E2470;
+  classDef io2 fill:#E1F0F1,stroke:#0E7C86,stroke-width:1.6px,color:#0A464C;
+  class q1,q2,q3,q4,q5,q6 model;
+  class rec,crm io2;
+</pre>
+  </div>
+  <p class="caption">Question 6 is not an afterthought — <code>eligibility_proof</code> is emitted by the policy layer, not reconstructed later by an LLM.</p>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v15">
+  <div class="vhead"><span class="vnum">View 03</span><span class="alt">Data</span></div>
+  <h2>Dataset, schema and feature construction</h2>
+  <p class="col">Scale is set by what each downstream method needs to be statistically meaningful: enough interactions per HCP for sequence modelling, enough randomisation units for cluster-randomised experiments, and enough treated/control contrast for uplift estimation.</p>
+
+  <details class="bigtable"><summary>Show full table — 13 rows by Entity</summary>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Entity</th><th>Scale</th><th>Drives</th></tr></thead>
+    <tbody>
+      <tr><td>HCPs</td><td class="num">50,000</td><td>User-side embeddings, segment strata</td></tr>
+      <tr><td>HCOs</td><td class="num">5,000</td><td>Affiliation edges, institutional influence</td></tr>
+      <tr><td>Representatives</td><td class="num">500</td><td>Territory capacity constraints</td></tr>
+      <tr><td>Territories</td><td class="num">100</td><td>Cluster-RCT randomisation units</td></tr>
+      <tr><td>Brands / domains</td><td class="num">3</td><td>Cross-domain transfer experiment</td></tr>
+      <tr><td>Channels</td><td class="num">5</td><td>Bandit arm space</td></tr>
+      <tr><td>Content campaigns</td><td class="num">2,000</td><td>Lineage root</td></tr>
+      <tr><td>Modules</td><td class="num">5,000</td><td>Mid-lineage grouping</td></tr>
+      <tr><td>Content key messages</td><td class="num">10,000</td><td>Item-side embeddings</td></tr>
+      <tr><td>Engagement events</td><td class="num">3–5 M</td><td>Interaction matrix, sequences</td></tr>
+      <tr><td>Graph relationships</td><td class="num">5–10 M</td><td>Graph retrieval, GNN training</td></tr>
+      <tr><td>Experiments</td><td class="num">20–30</td><td>Uplift and policy evaluation</td></tr>
+      <tr><td>Time period</td><td class="num">18–24 months</td><td>Temporal splits, seasonality, drift</td></tr>
+    </tbody>
+  </table></div></details>
+
+  <h3>Core event schema</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Table</th><th>Fields</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Event</strong></td><td class="mono">event_id · hcp_id · timestamp · session_id · brand_id · channel · action_type · content_id · topic_id · rep_id · territory_id · impression · open · click · dwell_seconds · follow_up_accepted · event_registered · opt_out</td></tr>
+      <tr><td><strong>HCP feature</strong></td><td class="mono">hcp_id · specialty · segment · territory · affiliated_hco · historical_channel_affinity · topic_affinity_vector · engagement_frequency · days_since_last_contact · preferred_time_window · access_barrier_cluster · graph_embedding</td></tr>
+      <tr><td><strong>Content</strong></td><td class="mono">content_id · tactic_id · module_id · atom_id · topic · channel · brand · approval_status · effective_date · expiry_date · segment_eligibility · embedding</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note col"><strong>Leakage discipline.</strong> All splits are temporal, never random. Features are computed as of the event timestamp through point-in-time joins, and a dedicated leakage test asserts that no feature in a training row was observable only after that row's label.</div>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v07">
+  <div class="vhead"><span class="vnum">View 04</span><span class="alt">L2 · Graph</span></div>
+  <h2>HCP-360 knowledge graph schema</h2>
+  <p class="col">Three retrieval paths the feature tables cannot serve: content lineage for asset-level attribution, affiliation for cold-start, and barrier matching for the highest-intent recommendation in the system.</p>
+
+  <div class="diagram">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'fontFamily':'ui-monospace,SFMono-Regular,Menlo,monospace','fontSize':'12px','lineColor':'#5C6675','primaryTextColor':'#0D1117'}}}%%
+flowchart LR
+  HCP(["HealthcareProfessional"])
+  HCO(["HCO"])
+  SEG(["HCPSegmentation"])
+  REP(["Representative"])
+  TER(["Territory"])
+  ENG(["Engagement"])
+  TAC(["Campaign"])
+  MOD(["ContentModule"])
+  ATOM(["KeyMessage"])
+  BRAND(["Brand"])
+  CH(["Channel"])
+  TOP(["Topic"])
+  BAR(["AccessBarrier"])
+  EVT(["Event"])
+
+  HCP -->|"HCP_AFFILIATED_WITH_HCO"| HCO
+  HCP -->|"hasSegment"| SEG
+  HCP -->|"HCP_SIMILAR_TO_HCP"| HCP
+  HCP -->|"HCP_ATTENDED_EVENT"| EVT
+  HCP -->|"HCP_FACES_BARRIER"| BAR
+  ENG -->|"isDeliveredTo"| HCP
+  TAC -->|"Delivers"| ENG
+  TAC -->|"isComprisedOf"| MOD
+  MOD -->|"isComprisedOf"| ATOM
+  TAC -->|"promotes"| BRAND
+  ENG -->|"hasChannel"| CH
+  ATOM -->|"describes"| TOP
+  ATOM -->|"CONTENT_ADDRESSES_BARRIER"| BAR
+  REP -->|"REP_COVERS_TERRITORY"| TER
+  HCP -->|"located in"| TER
+
+  classDef semantic fill:#FAEDDD,stroke:#A85D08,stroke-width:1.5px,color:#6B3B05;
+  classDef model fill:#EBE8FA,stroke:#5B4BC4,stroke-width:1.5px,color:#2E2470;
+  class HCP,SEG,ENG,TAC,MOD,ATOM,BRAND,CH semantic;
+  class HCO,REP,TER,TOP,BAR,EVT model;
+</pre>
+  </div>
+  <p class="caption">Amber nodes are the core content and engagement ontology. Violet nodes support retrieval, territory planning and barrier-aware content matching.</p>
+
+  <details class="bigtable"><summary>Controlled vocabularies — taken verbatim from the ontology - 3 rows</summary>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Enumeration</th><th>Values</th><th>Role in the recommender</th></tr></thead>
+    <tbody>
+      <tr><td><code>omni:ChannelEnum</code></td><td class="num">FIELD_DETAIL · REP_EMAIL · BROADCAST_EMAIL · THIRD_PARTY_MEDIA · WEB_PORTAL · VIRTUAL_MEETING · EVENT</td><td>Action space for the Next-Best-Channel bandit</td></tr>
+      <tr><td><code>omni:SegmentEnum</code></td><td class="num">EarlyAdopter · GrowthPotential · Established</td><td>Eligibility filter and cold-start prior</td></tr>
+      <tr><td><code>omni:ApprovalEnum</code></td><td class="num">Approved · InReview · Expired</td><td>Hard policy gate — only <code>Approved</code> is servable</td></tr>
+    </tbody>
+  </table>
+  </div></details>
+
+<h3>Graph retrieval methods compared</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Method</th><th>Purpose</th><th>Cost</th><th>Explainable</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Rule traversal</strong></td><td>Transparent baseline; the thing every other method must beat</td><td>Low</td><td>Fully — path is the reason</td></tr>
+      <tr><td><strong>Personalised PageRank</strong></td><td>Rank graph-near content and similar HCPs</td><td>Medium</td><td>Yes — via path weight</td></tr>
+      <tr><td><strong>Node2Vec</strong></td><td>Structural HCP and content embeddings</td><td>Medium</td><td>Weakly</td></tr>
+      <tr><td><strong>GraphSAGE</strong></td><td>Learns from node attributes plus neighbourhood; handles new nodes</td><td>High</td><td>Limited — neighbour contribution analysis</td></tr>
+      <tr><td><strong>LightGCN</strong></td><td>Collaborative signal propagated over the interaction graph</td><td>High</td><td>Weakly</td></tr>
+      <tr><td><strong>Heterogeneous graph transformer</strong></td><td>Cross-entity recommendation over typed edges</td><td>Highest</td><td>Via metapath attention</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v03">
+  <div class="vhead"><span class="vnum">View 05</span><span class="alt">L1 · Platform</span></div>
+  <h2>End-to-end architecture</h2>
+  <p class="col">Two representations of one truth — a feature store for point lookups, a graph for traversal — feeding a single linear decision path.</p>
+
+  <div class="diagram">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'fontFamily':'ui-monospace,SFMono-Regular,Menlo,monospace','fontSize':'12px','lineColor':'#5C6675','primaryTextColor':'#0D1117'}}}%%
+flowchart LR
+  subgraph SRC["Sources"]
+    direction TB
+    s1["Content systems<br/>Modular Content Authoring · MLR Workflow<br/>Digital Asset Management · Campaign Taxonomy"]
+    s2["Delivery systems<br/>Field CRM (detail + broadcast)<br/>Marketing Automation · Third-party media"]
+    s3["Commercial warehouse<br/>Commercial Data Warehouse"]
+    s4["Consent &amp; suppression<br/>Consent Management · Suppression Service"]
+  end
+
+  subgraph LAKE["Lakehouse"]
+    direction TB
+    l1["Lake · Raw zone<br/>append-only events"]
+    l2["Lake · Refined zone<br/>conformed entities"]
+    l3["Spark / Delta<br/>Hive-partitioned<br/>point-in-time joins"]
+  end
+
+  subgraph FEAT["Feature &amp; semantic layer"]
+    direction TB
+    f1["Offline feature store<br/>time-aware training sets"]
+    f2["Online store<br/>Feast / Redis"]
+    f3["HCP-360 knowledge graph<br/>Graph DB · SPARQL"]
+    f4["ANN index<br/>FAISS / OpenSearch"]
+  end
+
+  subgraph CORE["Decision core"]
+    direction TB
+    c1["Candidate generation<br/>5 retrievers"]
+    c2["Learning-to-rank<br/>LambdaMART"]
+    c3["Sequence rescorer<br/>SASRec / BERT4Rec"]
+    c4["Bandit action selector<br/>Thompson / LinUCB"]
+    c5["Policy &amp; eligibility filter<br/>approval · consent · frequency"]
+  end
+
+  subgraph SERVE["Serving"]
+    direction TB
+    v1["Recommendation API<br/>FastAPI"]
+    v2["Pre-call copilot<br/>Graph-RAG explanation"]
+    v3["Control centre<br/>dashboard"]
+  end
+
+  s1 -->|"~3K assets/qtr"| l1
+  s2 -->|"~500K events/day"| l1
+  s3 -->|"nightly, 2.1 TB"| l2
+  s4 -->|"consent deltas"| l2
+  l1 --> l3
+  l2 --> l3
+  l3 -->|"180M feature rows/night"| f1
+  l3 -->|"+40K edges/day"| f3
+  f1 -->|"500K HCP keys"| f2
+  f1 -->|"40K x 128-d"| f4
+  f3 --> c1
+  f4 --> c1
+  f2 -->|"340 features, 12ms"| c2
+  c1 -->|"~100 candidates"| c2 --> c3 --> c4 --> c5
+  c5 -->|"2,000 QPS · P95 180ms"| v1
+  c5 --> v2
+  c5 --> v3
+  v1 -->|"delivered action"| s2
+  s2 -.->|"engagement events - async, hours to days"| l1
+  s2 -.->|"real-time stream - 4.5K/s peak"| l3
+
+  classDef infra fill:#E1F0F1,stroke:#0E7C86,stroke-width:1.5px,color:#0A464C;
+  classDef semantic  fill:#FAEDDD,stroke:#A85D08,stroke-width:1.5px,color:#6B3B05;
+  classDef model  fill:#EBE8FA,stroke:#5B4BC4,stroke-width:1.5px,color:#2E2470;
+  class s1,s2,s3,s4,l1,l2 infra;
+  class f3 semantic;
+  class l3,f1,f2,f4,c1,c2,c3,c4,c5,v1,v2,v3 model;
+</pre>
+  </div>
+  <p class="caption">Teal = data and serving infrastructure · amber = the semantic layer · violet = learned decision components. The dotted return edge is asynchronous — engagement outcomes land hours to days later.</p>
+
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v04">
+  <div class="vhead"><span class="vnum">View 06</span><span class="alt">L2 · Retrieval</span></div>
+  <h2>Candidate generation — five retrievers, one union</h2>
+  <p class="col">Recall is a ceiling — ranking cannot recover what retrieval missed. Five retrievers with different failure modes emit channel-specific tuples; each is measured on its own <code>Recall@50</code> so a silently broken retriever is visible rather than absorbed.</p>
+
+  <div class="diagram">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'fontFamily':'ui-monospace,SFMono-Regular,Menlo,monospace','fontSize':'12.5px','lineColor':'#5C6675','primaryTextColor':'#0D1117'}}}%%
+flowchart LR
+  hcp["HCP request<br/>hcp_id + context"]
+
+  r1["<b>Policy-aware baseline</b><br/>coarse eligibility pre-filter<br/>segment · brand · indication"]
+  r2["<b>Collaborative filtering</b><br/>item-item on engagement<br/>ALS / implicit"]
+  r3["<b>Two-tower ANN</b><br/>HCP tower x content tower<br/>FAISS top-200"]
+  r4["<b>Graph neighbours</b><br/>personalised PageRank<br/>metapath traversal"]
+  r5["<b>Segment popularity</b><br/>cold-start fallback<br/>EarlyAdopter/GrowthPotential/Established"]
+
+  u["Union + dedupe<br/>candidate_key = hcp_id + action_type<br/>+ content_id + channel + send_window"]
+  cap["Cap to 100 candidates<br/>proportional per source"]
+
+  hcp --> r1
+  hcp --> r2
+  hcp --> r3
+  hcp --> r4
+  hcp --> r5
+  r1 --> u
+  r2 --> u
+  r3 --> u
+  r4 --> u
+  r5 --> u
+  u --> cap
+  cap --> nxt["to ranking"]
+
+  classDef model fill:#EBE8FA,stroke:#5B4BC4,stroke-width:1.5px,color:#2E2470;
+  classDef io fill:#E1F0F1,stroke:#0E7C86,stroke-width:1.5px,color:#0A464C;
+  class r1,r2,r3,r4,r5 model;
+  class hcp,u,cap,nxt io;
+</pre>
+  </div>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Retriever</th><th>Covers</th><th>Fails on</th><th>Metric</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Policy-aware baseline</strong></td><td>Coarse eligibility pre-filter, full transparency</td><td>No personalisation signal</td><td class="num">Coverage %</td></tr>
+      <tr><td><strong>Collaborative filtering</strong></td><td>Dense HCPs with long engagement history</td><td>Cold-start HCPs and new content</td><td class="num">Recall@50</td></tr>
+      <tr><td><strong>Two-tower ANN</strong></td><td>Semantic match on content and HCP need</td><td>Needs retraining as content churns</td><td class="num">Recall@100</td></tr>
+      <tr><td><strong>Graph neighbours</strong></td><td>Affiliation, institution, similar-HCP paths</td><td>Sparse subgraphs, orphan nodes</td><td class="num">Cold-start Recall@50</td></tr>
+      <tr><td><strong>Segment popularity</strong></td><td>Never returns empty — the floor</td><td>Popularity bias, low diversity</td><td class="num">Diversity / coverage</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v20">
+  <div class="vhead"><span class="vnum">View 07</span><span class="alt">Serving · Lifecycle</span></div>
+  <h2>Serving: request lifecycle and in-session adaptation</h2>
+  <p class="col">One request end to end, and how the features it reads are kept fresh between requests.</p>
+
+  <div class="diagram">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'fontFamily':'ui-monospace,SFMono-Regular,Menlo,monospace','fontSize':'12px','lineColor':'#5C6675','primaryTextColor':'#0D1117'}}}%%
+sequenceDiagram
+  autonumber
+  participant CRM as Field CRM
+  participant API as Recommendation API
+  participant FS as Online store
+  participant R as Retrieval tier
+  participant M as Ranking models
+  participant P as Policy gate
+  CRM->>API: GET /recommendations?hcp_id
+  API->>FS: fetch batch + session features
+  FS-->>API: 340 features · 12 ms
+  API->>R: fan out to 5 retrievers in parallel
+  R-->>API: ~100 candidate tuples · 45 ms
+  API->>M: score tuples
+  M-->>API: LambdaMART 100 · 18 ms
+  M-->>API: sequence rescore top 20 · 55 ms
+  API->>API: utility adjust + bandit select · 5 ms
+  API->>P: evaluate eligibility
+  P-->>API: pass or suppress + proof · 9 ms
+  API-->>CRM: top K + rationale · P95 180 ms
+</pre>
+  </div>
+
+  <h3>Latency budget — allocated targets per stage</h3>
+  <details class="bigtable"><summary>Full latency budget - 11 rows</summary>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Stage</th><th>P50</th><th>P95</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Request parse and auth</td><td class="num">1 ms</td><td class="num">2 ms</td><td></td></tr>
+      <tr><td>Feature fetch — online store</td><td class="num">4 ms</td><td class="num">12 ms</td><td>Batch + session features in one round trip</td></tr>
+      <tr><td>Candidate generation — 5 parallel</td><td class="num">14 ms</td><td class="num">45 ms</td><td>Bounded by graph traversal, the slowest retriever</td></tr>
+      <tr><td>Union, dedupe, proportional cap</td><td class="num">1 ms</td><td class="num">3 ms</td><td></td></tr>
+      <tr><td>LambdaMART — 100 candidates</td><td class="num">7 ms</td><td class="num">18 ms</td><td>Scales linearly in candidate count</td></tr>
+      <tr><td>Sequence rescorer — top 20 only</td><td class="num">12 ms</td><td class="num">55 ms</td><td>Dominant cost; bounded by rescoring the head, not all 100</td></tr>
+      <tr><td>Utility adjustment</td><td class="num">&lt;1 ms</td><td class="num">1 ms</td><td>Arithmetic on business coefficients</td></tr>
+      <tr><td>Bandit arm selection</td><td class="num">2 ms</td><td class="num">4 ms</td><td>Posterior sample over 7 arms</td></tr>
+      <tr><td>Policy gate — 6 rules</td><td class="num">3 ms</td><td class="num">9 ms</td><td>Short-circuit; most candidates fail rule 1</td></tr>
+      <tr><td>Response assembly and rationale</td><td class="num">2 ms</td><td class="num">5 ms</td><td></td></tr>
+      <tr><td><strong>Total</strong></td><td class="num"><strong>45 ms</strong></td><td class="num"><strong>180 ms</strong></td><td>Against a 250 ms budget</td></tr>
+    </tbody>
+  </table>
+  </div></details>
+
+
+  <h3>In-session adaptation - how the features that request reads stay current</h3>
+  <p class="col">The streaming path changes exactly one thing: which features the ranker reads at request time. It retrains nothing.</p>
+  <div class="diagram">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'fontFamily':'ui-monospace,SFMono-Regular,Menlo,monospace','fontSize':'12.5px','lineColor':'#5C6675','primaryTextColor':'#0D1117'}}}%%
+flowchart LR
+  ev["CRM &amp; web events<br/>open · click · dwell · page view"]
+  k["Kafka<br/>topic: hcp.engagement.v1"]
+  ss["Spark Structured Streaming<br/>sessionise by hcp_id<br/>10-min watermark"]
+  fu["Session feature updater<br/>recent topics · channel · time gaps"]
+  on["Online store<br/>Feast / Redis"]
+  api["Rescoring API"]
+  hist["Delta history<br/>replay + training"]
+
+  ev --> k --> ss --> fu --> on --> api
+  ss --> hist
+  api -->|"refreshed ranked list"| ui["Rep worklist / web surface"]
+
+  classDef model fill:#EBE8FA,stroke:#5B4BC4,stroke-width:1.5px,color:#2E2470;
+  classDef io fill:#E1F0F1,stroke:#0E7C86,stroke-width:1.5px,color:#0A464C;
+  class k,ss,fu,on,api model;
+  class ev,hist,ui io;
+</pre>
+  </div>
+  <div class="note col"><strong>Worked example.</strong> Initial recommendation: general educational content. New event arrives — the HCP opens an access-related page and searches reimbursement terms. Session features update within the watermark; the next request retrieves access-resource content modules and a field-access follow-up rises to rank 1.</div>
+
+  <h3>Failure modes and degradation</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Component fails</th><th>Detected by</th><th>Behaviour</th><th>User impact</th></tr></thead>
+    <tbody>
+      <tr><td>Session feature stream</td><td>Consumer lag alert &gt; 60 s</td><td>API proceeds on batch features only</td><td>Slightly less responsive to in-session intent</td></tr>
+      <tr><td>ANN index unavailable</td><td>Per-source Recall@50 drops to zero</td><td>Four remaining retrievers serve</td><td>Reduced semantic coverage, list still full</td></tr>
+      <tr><td>Graph database timeout</td><td>Retriever P95 breach</td><td>Retriever drops out at 60 ms deadline</td><td>Loses relational and cold-start paths</td></tr>
+      <tr><td>Sequence rescorer</td><td>Stage latency breach</td><td>Falls back to LambdaMART ordering</td><td>Loses short-term intent signal</td></tr>
+      <tr><td>Bandit service</td><td>Health check</td><td>Falls back to highest-prior channel</td><td>Exploration pauses, exploitation continues</td></tr>
+      <tr><td><strong>Policy gate</strong></td><td>Health check</td><td><strong>Request fails closed — no recommendation served</strong></td><td>Empty worklist</td></tr>
+      <tr><td>Online store</td><td>Read error rate</td><td>Reuse last-known-good <em>scores</em>, then re-run the authoritative gate against current approval, consent and contact state. If policy state is also unavailable, fail closed</td><td>Ordering may be stale; eligibility never is</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="caption">Ranking quality degrades gracefully; eligibility does not degrade at all. A cached score is acceptable, a cached eligibility decision is not — content expires, consent is withdrawn and frequency limits are reached between requests.</p>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v05">
+  <div class="vhead"><span class="vnum">View 08</span><span class="alt">L2 · Ranking</span></div>
+  <h2>Ranking and the policy cascade</h2>
+  <p class="col">Retrieval emits <strong>channel-specific tuples</strong>, so channel is scored rather than assigned afterwards. Exploration enters as a bonus term on an already-eligible tuple — it never reassigns a component of a scored candidate. The authoritative eligibility gate runs last and is absolute.</p>
+
+  <div class="diagram">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'fontFamily':'ui-monospace,SFMono-Regular,Menlo,monospace','fontSize':'12.5px','lineColor':'#5C6675','primaryTextColor':'#0D1117'}}}%%
+flowchart TB
+  cands["~100 channel-specific tuples<br/>from retrieval"] --> ltr
+
+  ltr["<b>Stage 1 · LightGBM LambdaMART</b><br/>ranks full tuples<br/>HCP x action x content x channel<br/>meaningful-engagement relevance labels<br/>objective: NDCG@K"]
+  seq["<b>Stage 2 · Sequence rescorer</b><br/>SASRec over recent interaction sequence<br/>blends short-term intent"]
+  util["<b>Stage 3 · Utility and exploration</b><br/>score + exploration bonus<br/>− fatigue − opt-out risk − cost"]
+  ban["<b>Stage 4 · Final ordering</b><br/>argmax over eligible tuples<br/>channel is carried, never reassigned"]
+
+  ltr --> seq --> util --> ban --> pol
+
+  subgraph POL["Stage 5 · Policy gate — absolute, non-overridable"]
+    direction TB
+    p1["approval_status = Approved"]
+    p2["effective_date &lt;= today &lt; expiry_date"]
+    p3["segment_eligibility contains HCP segment"]
+    p4["channel permitted for content type"]
+    p5["consent present · not opted out"]
+    p6["contact frequency within limit"]
+  end
+
+  pol["eligibility evaluation"] --> p1 --> p2 --> p3 --> p4 --> p5 --> p6
+  p6 --> out["Final ranked list<br/>top K + suppression log"]
+
+  classDef model fill:#EBE8FA,stroke:#5B4BC4,stroke-width:1.5px,color:#2E2470;
+  classDef policy fill:#FAEDDD,stroke:#A85D08,stroke-width:1.6px,color:#6B3B05;
+  classDef io fill:#E1F0F1,stroke:#0E7C86,stroke-width:1.5px,color:#0A464C;
+  class ltr,seq,util,ban model;
+  class p1,p2,p3,p4,p5,p6,pol policy;
+  class cands,out io;
+</pre>
+  </div>
+  <p class="caption">Every suppression records the full candidate tuple, the rule violated, the policy version and the evaluation timestamp — <code>{recommendation_id, hcp_id, action_type, content_id, channel, send_window, rule_violated, policy_version, evaluated_at}</code>. Suppression compliance is a first-class metric, not an exception path.</p>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v08">
+  <div class="vhead"><span class="vnum">View 09</span><span class="alt">L2 · Validation</span></div>
+  <h2>Validation strategy — four tracks, each against its own baseline</h2>
+  <p class="col">These components solve different problems and are not rungs on one ladder. A retriever cannot beat a ranker: one is measured on recall, the other on ordering. Each track has its own baseline, its own metric, and its own promotion rule.</p>
+
+  <div class="diagram">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'fontFamily':'ui-monospace,SFMono-Regular,Menlo,monospace','fontSize':'12px','lineColor':'#5C6675','primaryTextColor':'#0D1117'}}}%%
+flowchart LR
+  subgraph T1["Retrieval track - Recall@50/100, cold-start recall, coverage"]
+    direction LR
+    a0["Segment<br/>popularity"] --> a1["Collaborative<br/>filtering"] --> a2["Two-tower<br/>retrieval"] --> a3["Graph-hybrid<br/>retrieval"]
+  end
+  subgraph T2["Ranking track - NDCG@10, MAP@K, calibration"]
+    direction LR
+    b0["Rules<br/>score"] --> b1["Propensity<br/>model"] --> b2["LambdaMART"] --> b3["Sequence<br/>rescoring"]
+  end
+  subgraph T3["Online decision track - cumulative reward, regret, opt-out rate"]
+    direction LR
+    c0["Fixed channel<br/>policy"] --> c1["Epsilon-greedy"] --> c2["LinUCB"] --> c3["Thompson<br/>sampling"]
+  end
+  subgraph T4["Causal track - Qini, uplift@K, incremental per 1K HCPs"]
+    direction LR
+    d0["Propensity<br/>targeting"] --> d1["T-learner"] --> d2["X-learner"] --> d3["Causal<br/>forest"]
+  end
+
+  classDef io fill:#E1F0F1,stroke:#0E7C86,stroke-width:1.5px,color:#0A464C;
+  classDef model fill:#EBE8FA,stroke:#5B4BC4,stroke-width:1.5px,color:#2E2470;
+  class a0,b0,c0,d0 io;
+  class a1,a2,a3,b1,b2,b3,c1,c2,c3,d1,d2,d3 model;
+</pre>
+  </div>
+  <p class="caption">Teal is the incumbent baseline for each track — what the business does today, or the simplest thing that works. Promotion requires beating that baseline on the track's own metric, on the same temporal split, with bootstrap confidence intervals over HCPs.</p>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Track</th><th>Question it answers</th><th>Baseline to beat</th><th>Primary metric</th><th>Promotion rule</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Retrieval</strong></td><td>Does the right action reach the ranker at all?</td><td>Segment popularity</td><td>Recall@100 · cold-start Recall@50</td><td>Raises the recall ceiling enough to justify an index rebuild</td></tr>
+      <tr><td><strong>Ranking</strong></td><td>Is the ordering right?</td><td>Rules score</td><td>NDCG@10 · MAP@K</td><td>Beats current practice, and calibration does not degrade</td></tr>
+      <tr><td><strong>Online decision</strong></td><td>Which channel, under uncertainty?</td><td>Fixed channel policy</td><td>Cumulative reward · regret</td><td>Lower regret without raising opt-out rate</td></tr>
+      <tr><td><strong>Causal</strong></td><td>Did the action cause the outcome?</td><td>Propensity targeting</td><td>Qini · uplift@K</td><td>Higher incremental engagement per 1,000 HCPs</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="note col"><strong>The rule is "beat the right baseline", not "beat the previous model".</strong> Scoped adoption is a valid outcome — if two-tower retrieval wins only on cold-start HCPs, it serves cold-start candidates and nothing more. What does not happen is a global claim from a segment win.</div>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v10">
+  <div class="vhead"><span class="vnum">View 10</span><span class="alt">L2 · Online</span></div>
+  <h2>Online learning — exploration inside the eligible set</h2>
+  <p class="col">Offline learning can only learn from actions that were taken, which leaves channel preference confounded by historical policy. Exploration is the only mechanism that breaks that — and it runs strictly inside the eligible action space.</p>
+
+  <div class="diagram">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'fontFamily':'ui-monospace,SFMono-Regular,Menlo,monospace','fontSize':'12.5px','lineColor':'#5C6675','primaryTextColor':'#0D1117'}}}%%
+flowchart LR
+  ctx["<b>Context</b><br/>HCP features · current sequence<br/>channel · time · territory<br/>content category · contact frequency"]
+  pol["<b>Policy</b><br/>Thompson sampling<br/>posterior over arm reward"]
+  arms["<b>Arms</b><br/>email content A · email content B<br/>rep follow-up · event invitation<br/>web resource · no action"]
+  obs["<b>Observed outcome</b>"]
+  rew["<b>Reward</b>"]
+  upd["Posterior update"]
+
+  ctx --> pol --> arms --> obs --> rew --> upd --> pol
+
+  classDef model fill:#EBE8FA,stroke:#5B4BC4,stroke-width:1.5px,color:#2E2470;
+  classDef io fill:#E1F0F1,stroke:#0E7C86,stroke-width:1.5px,color:#0A464C;
+  class pol,arms,upd model;
+  class ctx,obs,rew io;
+</pre>
+  </div>
+
+  <h3>Reward function</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Outcome</th><th>Reward</th><th>Why weighted this way</th></tr></thead>
+    <tbody>
+      <tr><td>Email open</td><td class="num">+0.1</td><td>Weak signal, easily inflated by preview panes</td></tr>
+      <tr><td>Click</td><td class="num">+0.3</td><td>Intent, but not yet value</td></tr>
+      <tr><td>Meaningful content engagement</td><td class="num">+0.6</td><td>Dwell past threshold — the real objective</td></tr>
+      <tr><td>Follow-up accepted</td><td class="num">+1.0</td><td>Terminal success for the action</td></tr>
+      <tr><td>Opt-out</td><td class="num">−1.0</td><td>Loses the channel permanently</td></tr>
+      <tr><td>No action taken</td><td class="num">0.0</td><td>A real arm with a real outcome — restraint is learnable</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="note col"><strong>Exploration is bounded to the eligible set.</strong> Arms that would breach approval, consent, channel permission or contact frequency are removed <em>before</em> the policy samples, so a compliance breach is not a low-reward outcome the bandit learns to avoid — it is unreachable. What the policy does learn from is engagement, dwell, follow-up acceptance, fatigue and opt-out.</div>
+  <p class="caption">Baselines compared: fixed channel policy · epsilon-greedy · LinUCB · Thompson sampling. Reported on cumulative reward, regret, action diversity and opt-out rate.</p>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v11">
+  <div class="vhead"><span class="vnum">View 11</span><span class="alt">L2 · Causal</span></div>
+  <h2>Experimentation and uplift</h2>
+  <p class="col">A propensity model asks who is likely to respond. An uplift model asks who responds <em>because</em> we acted. Targeting the first produces a system that takes credit for engagement that would have happened anyway — and, worse, keeps contacting sleeping dogs.</p>
+
+  <div class="diagram">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'fontFamily':'ui-monospace,SFMono-Regular,Menlo,monospace','fontSize':'12.5px','lineColor':'#5C6675','primaryTextColor':'#0D1117'}}}%%
+flowchart TB
+  subgraph DES["Experiment design"]
+    direction LR
+    d1["HCP-level randomisation<br/>when no rep spillover"]
+    d2["Cluster RCT by territory<br/>when reps serve many HCPs"]
+    d3["Switchback by time block<br/>when policy is global"]
+  end
+
+  DES --> run["Run: personalised policy<br/>vs rules / standard segmentation"]
+  run --> outc["Outcomes<br/>engagement · acceptance<br/>fatigue · opt-out rate"]
+  outc --> up["Uplift model<br/>T-learner · X-learner · causal forest"]
+
+  up --> g1["<b>Persuadables</b><br/>respond only if contacted<br/>→ TARGET THESE"]
+  up --> g2["<b>Sure things</b><br/>respond regardless<br/>→ do not spend contact"]
+  up --> g3["<b>Lost causes</b><br/>never respond<br/>→ do not spend contact"]
+  up --> g4["<b>Sleeping dogs</b><br/>contact harms engagement<br/>→ actively suppress"]
+
+  classDef model fill:#EBE8FA,stroke:#5B4BC4,stroke-width:1.5px,color:#2E2470;
+  classDef infra fill:#E1F0F1,stroke:#0E7C86,stroke-width:1.8px,color:#0A464C;
+  classDef policy fill:#FAEDDD,stroke:#A85D08,stroke-width:1.6px,color:#6B3B05;
+  class d1,d2,d3,run,outc,up model;
+  class g1 infra;
+  class g4 policy;
+  class g2,g3 model;
+</pre>
+  </div>
+  <p class="caption">Reported on Qini curve, uplift@K, and incremental engagement per 1,000 HCPs — never on raw response rate in the treated group.</p>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v12">
+  <div class="vhead"><span class="vnum">View 12</span><span class="alt">L2 · GenAI</span></div>
+  <h2>Compliant pre-call copilot — where the LLM is and is not allowed</h2>
+  <p class="col">This is the single most important boundary in the architecture. The LLM does not rank, does not select, and does not decide eligibility. It receives an already-ranked, already-filtered list plus the approved evidence, and writes the explanation. Saying "I used an LLM to recommend content" describes a system that cannot pass MLR review.</p>
+
+  <div class="diagram">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'fontFamily':'ui-monospace,SFMono-Regular,Menlo,monospace','fontSize':'12.5px','lineColor':'#5C6675','primaryTextColor':'#0D1117'}}}%%
+flowchart TB
+  q["Rep question<br/>'best approved follow-up for this HCP<br/>given recent access-content activity?'"]
+
+  subgraph DET["Deterministic zone — ML and rules decide"]
+    direction TB
+    a1["1 · Retrieve HCP history<br/>graph traversal"]
+    a2["2 · Generate candidates<br/>five retrievers"]
+    a3["3 · Rank<br/>LTR + sequence rescorer"]
+    a4["4 · Filter<br/>approval · consent · recency · frequency"]
+    a5["5 · Retrieve supporting evidence<br/>hybrid vector + metadata + graph"]
+  end
+
+  subgraph GEN["Generative zone — language only"]
+    direction TB
+    b1["6 · Explain the ranked list<br/>in natural language"]
+    b2["7 · Cite key message IDs and<br/>the feature signals used"]
+  end
+
+  q --> a1 --> a2 --> a3 --> a4 --> a5 --> b1 --> b2 --> out["Answer with citations"]
+
+  note["<b>Boundary rule</b><br/>the LLM never reorders, never adds a candidate,<br/>never overrides an eligibility decision"]
+  GEN -.- note
+
+  classDef infra fill:#E1F0F1,stroke:#0E7C86,stroke-width:1.6px,color:#0A464C;
+  classDef model fill:#EBE8FA,stroke:#5B4BC4,stroke-width:1.6px,color:#2E2470;
+  classDef policy fill:#FAEDDD,stroke:#A85D08,stroke-width:1.8px,color:#6B3B05;
+  class a1,a2,a3,a4,a5 infra;
+  class b1,b2,out model;
+  class note policy;
+</pre>
+  </div>
+  <p class="caption">Evaluated on factuality, citation correctness, groundedness, constraint satisfaction, and hallucination rate — not on fluency.</p>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v13">
+  <div class="vhead"><span class="vnum">View 13</span><span class="alt">L2 · MLOps</span></div>
+  <h2>Observability</h2>
+  <p class="col">A recommender degrades quietly. Ranking quality decays before anyone reports a problem, and subgroup damage — a specialty or a segment being systematically under-served — never shows up in an aggregate metric.</p>
+
+  <div class="diagram">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'fontFamily':'ui-monospace,SFMono-Regular,Menlo,monospace','fontSize':'12.5px','lineColor':'#5C6675','primaryTextColor':'#0D1117'}}}%%
+flowchart LR
+  subgraph SIG["Signals"]
+    direction TB
+    x1["Feature drift<br/>PSI per feature"]
+    x2["Prediction drift<br/>score distribution"]
+    x3["NDCG decay<br/>rolling window"]
+    x4["Training/serving skew"]
+    x5["Subgroup performance<br/>by specialty · segment · territory"]
+    x6["Latency P50 / P95"]
+    x7["Suppression rate<br/>by rule"]
+  end
+
+  reg["Model registry<br/>MLflow"]
+  mon["Monitoring service"]
+  alert["Alerting"]
+  act["Actions<br/>retrain · rollback · freeze policy"]
+
+  SIG --> mon --> alert --> act
+  reg --> mon
+  act --> reg
+
+  classDef model fill:#EBE8FA,stroke:#5B4BC4,stroke-width:1.5px,color:#2E2470;
+  classDef io fill:#E1F0F1,stroke:#0E7C86,stroke-width:1.5px,color:#0A464C;
+  class x1,x2,x3,x4,x5,x6,x7 model;
+  class reg,mon,alert,act io;
+</pre>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v18">
+  <div class="vhead"><span class="vnum">View 14</span><span class="alt">Close</span></div>
+  <h2>What this demonstrates, what it costs, and what comes next</h2>
+  <p class="col">What the design establishes, the costs it accepts to get there, and the three things I would do first with production traffic.</p>
+
+  <h3>What the system demonstrates</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Capability</th><th>How it shows up in the design</th></tr></thead>
+    <tbody>
+      <tr><td><strong>A coherent joint decision</strong></td><td>One scored tuple - HCP, action, content, channel, window - rather than components reconciled after the fact</td></tr>
+      <tr><td><strong>Hybrid retrieval</strong></td><td>Five retrievers with complementary failure modes, each measured on unique contribution</td></tr>
+      <tr><td><strong>Ranking under business utility</strong></td><td>Model score adjusted by commercially-owned fatigue, opt-out and cost coefficients held outside the learned objective</td></tr>
+      <tr><td><strong>Deterministic compliance</strong></td><td>A zero-error eligibility gate that runs last, emits an audit proof, and fails closed</td></tr>
+      <tr><td><strong>Bounded exploration</strong></td><td>Online learning confined to the eligible action space, so a breach is unreachable rather than penalised</td></tr>
+      <tr><td><strong>Real-time adaptation</strong></td><td>Session features refreshed within minutes on a path that degrades gracefully to batch</td></tr>
+      <tr><td><strong>Causal measurement</strong></td><td>Targeting on incremental rather than predicted response, with randomisation designed around field spillover</td></tr>
+      <tr><td><strong>Grounded explanation</strong></td><td>Generation scoped to language, with citations validated against the retrieved evidence set</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Accepted trade-offs</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Decision</th><th>What it costs</th><th>Why it was still the right call</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Joint decision record</strong></td><td>Pipeline coupling — the channel model cannot be released independently of the ranker</td><td>Independent models produce contradictory recommendations, and the reconciliation layer becomes unlearnable</td></tr>
+      <tr><td><strong>Penalties outside the learned objective</strong></td><td>Some loss of joint optimality against a fully-learned objective</td><td>Contact policy is a commercial accountability; the business can retune without a model release</td></tr>
+      <tr><td><strong>Eligibility gate last</strong></td><td>Scoring work spent on candidates that are later suppressed</td><td>Freshest possible approval check, an auditable suppression log, and no compliance signal leaking into the ranking objective</td></tr>
+      <tr><td><strong>Two stores over one</strong></td><td>Consistency risk between the feature store and the graph</td><td>Point lookup and variable-depth traversal are different access patterns; one store serves one of them badly</td></tr>
+      <tr><td><strong>Generative layer scoped to language</strong></td><td>Loses whatever contextual signal a language model could contribute to ordering</td><td>Reproducibility is required for audit and for experiment validity; that signal is better distilled into an offline feature</td></tr>
+      <tr><td><strong>RDF over a property graph</strong></td><td>Traversal throughput I have not benchmarked at production scale</td><td>Formal ontology governance and interoperability across many source systems</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>What I would change first</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>#</th><th>Change</th><th>Reason</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>Basic observability from first deployment — logging, lineage, model versioning and latency monitoring ship with the first served model; drift and subgroup analysis follow once production outcomes mature</td><td>Lightweight logging and latency monitoring should exist from the first served model; only drift and subgroup analysis need a running system to be meaningful</td></tr>
+      <tr><td class="num">2</td><td>Benchmark the graph store against a property-graph alternative</td><td>Retrieval latency at production traversal volume is an open question, not a settled one</td></tr>
+      <tr><td class="num">3</td><td>Re-engineer the ANN index and graph rebuilds to be incremental</td><td>Both are full recomputations today and are the first components that would break at ten times the volume</td></tr>
+      <tr><td class="num">4</td><td>Calibrate reward and penalty coefficients against realised opt-out rates</td><td>The current values encode a defensible ordering but are set a priori rather than fitted</td></tr>
+      <tr><td class="num">5</td><td>Add a learned retrieval blend in place of proportional allocation</td><td>Proportional allocation is transparent but almost certainly leaves recall on the table</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Open questions I would answer with production data</h3>
+  <ul class="col">
+    <li>Does the shared cross-channel encoder actually beat per-channel models on sparse-channel HCPs, or is the aggregate gain driven entirely by the dense channels?</li>
+    <li>How large is the negative-uplift population in practice — is suppressing it a material effect or a rounding error?</li>
+    <li>Does in-session feature refresh change decisions often enough to justify the streaming path over hourly batch?</li>
+    </ul>
+
+  <div class="note col"><strong>On measurement.</strong> Offline ranking quality and business impact are different questions and can disagree. Offline NDCG measures ordering against held-out engagements under the existing logging policy; whether that translates into incremental value is answered only by randomised experiment, reported as Qini and incremental engagement per thousand HCPs.</div>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<div class="apxbreak">
+  <h2>Appendix</h2>
+  <p class="col">Reference detail - capacity tables, transfer architecture, repository layout and build sequencing. Available for questions rather than presented in flow.</p>
+</div>
+
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v19">
+  <div class="vhead"><span class="vnum">Appendix 1</span><span class="alt">Capacity</span></div>
+  <h2>Scale, throughput and service objectives</h2>
+  <p class="col"><strong>Design capacity and service targets</strong>, not recorded benchmarks — these are the figures the system is sized and engineered against. Batch, streaming and request-time paths carry very different load profiles, and each has its own objective — throughput for batch, freshness for streaming, latency for serving.</p>
+
+  <h3>Entity and corpus volume</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Entity</th><th>Volume</th><th>Growth</th><th>What it drives</th></tr></thead>
+    <tbody>
+      <tr><td>Healthcare professionals</td><td class="num">500 K</td><td class="num">~3% / yr</td><td>User-side embeddings, segment strata</td></tr>
+      <tr><td>Healthcare organisations</td><td class="num">45 K</td><td class="num">~2% / yr</td><td>Affiliation edges, institutional influence</td></tr>
+      <tr><td>Field representatives</td><td class="num">4,500</td><td class="num">flat</td><td>Territory capacity constraint</td></tr>
+      <tr><td>Territories</td><td class="num">900</td><td class="num">realigned 2× / yr</td><td>Cluster-randomisation units</td></tr>
+      <tr><td>Campaigns</td><td class="num">8 K</td><td class="num">~600 / quarter</td><td>Lineage root</td></tr>
+      <tr><td>Content modules</td><td class="num">20 K</td><td class="num">~1.5 K / quarter</td><td>Mid-lineage grouping</td></tr>
+      <tr><td>Key messages</td><td class="num">40 K</td><td class="num">~3 K / quarter</td><td>Item-side embeddings, retrieval corpus</td></tr>
+      <tr><td>Engagement events</td><td class="num">180 M / yr</td><td class="num">~500 K / day</td><td>Interaction matrix, sequences, labels</td></tr>
+      <tr><td>Graph nodes / edges</td><td class="num">1.2 M / 14 M</td><td class="num">+40 K edges / day</td><td>Graph retrieval, GNN training</td></tr>
+      <tr><td>Lakehouse footprint</td><td class="num">2.1 TB</td><td class="num">~55 GB / month</td><td>Raw + refined + feature tables</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>The three load profiles</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Path</th><th>Volume &amp; shape</th><th>Compute</th><th>Objective</th><th>SLO</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Batch</strong><br/>nightly training + features</td><td class="num">180 M feature rows / night<br/>2.1 TB scanned</td><td>Spark on Hive-partitioned Delta tables · 40 executors · 8 vCPU / 32 GB</td><td>Throughput and point-in-time correctness</td><td class="num">Target: complete in &lt; 45 min</td></tr>
+      <tr><td><strong>Streaming</strong><br/>engagement events</td><td class="num">~500 K events / day sustained<br/>peak <strong>4.5 K events/sec</strong> during campaign sends</td><td>Kafka 24 partitions, keyed by hcp_id · Spark Structured Streaming, 10-min watermark</td><td>Feature freshness</td><td class="num">Consumer lag &lt; 60 s<br/>event→feature &lt; 5 min</td></tr>
+      <tr><td><strong>Session</strong><br/>in-flight interaction state</td><td class="num">~85 K concurrent sessions<br/>~4 KB state each · 340 MB working set</td><td>Redis, 30-min TTL, keyed by hcp_id</td><td>Read latency</td><td class="num">P99 read &lt; 5 ms</td></tr>
+      <tr><td><strong>Serving</strong><br/>recommendation API</td><td class="num">2,000 QPS peak<br/>~200 K candidate scorings / sec</td><td>FastAPI, horizontally scaled · warm model cache</td><td>Latency and availability</td><td class="num">Target P50 45 ms · P95 180 ms<br/>Target availability 99.9%</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="caption">The event stream is bursty rather than uniform: a broadcast send to a large segment produces hundreds of thousands of impression events in minutes, which is why the streaming tier is sized on peak rather than mean.</p>
+
+  <h3>Model and index operations</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Artefact</th><th>Size</th><th>Cadence</th><th>Build cost</th></tr></thead>
+    <tbody>
+      <tr><td>Ranker training set</td><td class="num">~85 M labelled rows · 340 features</td><td class="num">Weekly</td><td class="num">~35 min</td></tr>
+      <tr><td>Two-tower embeddings</td><td class="num">500 K HCP × 128-d · 40 K item × 128-d</td><td class="num">Nightly</td><td class="num">~50 min GPU</td></tr>
+      <tr><td>ANN index</td><td class="num">40 K vectors · ~40 MB</td><td class="num">Nightly full rebuild</td><td class="num">~4 min</td></tr>
+      <tr><td>Sequence model</td><td class="num">Max sequence 200 · 6 layers</td><td class="num">Weekly</td><td class="num">~2.5 h GPU</td></tr>
+      <tr><td>Graph rebuild</td><td class="num">1.2 M nodes · 14 M edges</td><td class="num">Nightly, edges incremental</td><td class="num">~18 min</td></tr>
+      <tr><td>Bandit posteriors</td><td class="num">7 arms × context dim</td><td class="num">Continuous</td><td class="num">streaming update</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="note col"><strong>Known scaling limit.</strong> The ANN index and graph rebuilds are full recomputations. At roughly ten times current volume both become the binding constraint on nightly window and would need incremental construction — this is the first thing I would re-engineer.</div>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v09">
+  <div class="vhead"><span class="vnum">Appendix 2</span><span class="alt">Transfer</span></div>
+  <h2>Cross-brand and cross-channel transfer</h2>
+  <p class="col">The claim to test: behaviour in one domain improves prediction in another, most visibly for HCPs with thin history in the target domain. The ablation is the experiment — a shared encoder that does not beat per-channel models on sparse users has not earned its complexity.</p>
+
+  <div class="diagram">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'fontFamily':'ui-monospace,SFMono-Regular,Menlo,monospace','fontSize':'12.5px','lineColor':'#5C6675','primaryTextColor':'#0D1117'}}}%%
+flowchart LR
+  subgraph IN["Per-HCP input"]
+    direction TB
+    i1["Profile<br/>specialty · segment · territory"]
+    i2["Interaction sequence<br/>all brands, all channels"]
+    i3["Graph embedding<br/>Node2Vec / GraphSAGE"]
+  end
+
+  enc["<b>Shared HCP encoder</b><br/>transformer over unified sequence"]
+
+  h1["Email head<br/>BROADCAST_EMAIL / REP_EMAIL"]
+  h2["Field-action head<br/>FIELD_DETAIL rep call"]
+  h3["Web-content head"]
+  h4["Event head<br/>THIRD_PARTY_MEDIA / educational"]
+
+  i1 --> enc
+  i2 --> enc
+  i3 --> enc
+  enc --> h1
+  enc --> h2
+  enc --> h3
+  enc --> h4
+
+  abl["<b>Ablation ladder</b><br/>channel-only → brand-only<br/>→ shared → shared+graph<br/>→ shared+session transformer"]
+  enc -.-> abl
+
+  classDef model fill:#EBE8FA,stroke:#5B4BC4,stroke-width:1.5px,color:#2E2470;
+  classDef io fill:#E1F0F1,stroke:#0E7C86,stroke-width:1.5px,color:#0A464C;
+  class enc,h1,h2,h3,h4 model;
+  class i1,i2,i3,abl io;
+</pre>
+  </div>
+  <p class="caption">Three commercial domains: Brand A clinical education · Brand B access and reimbursement · Brand C scientific events.</p>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v14">
+  <div class="vhead"><span class="vnum">Appendix 3</span><span class="alt">Code layout</span></div>
+  <h2>Repository map</h2>
+  <p class="col">One repository, connected content modules — not twelve disconnected notebooks. Each folder maps to a component in View 03 and each is importable by the ones downstream of it.</p>
+
+  <div class="diagram">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'fontFamily':'ui-monospace,SFMono-Regular,Menlo,monospace','fontSize':'12px','lineColor':'#5C6675','primaryTextColor':'#0D1117'}}}%%
+flowchart LR
+  d01["01_data_generation"] --> d02["02_spark_feature_pipeline"]
+  d02 --> d03["03_behavioral_analysis"]
+  d02 --> d04["04_baseline_recommenders"]
+  d02 --> d05["05_candidate_generation<br/>collaborative_filtering · two_tower · graph_retrieval"]
+  d05 --> d06["06_learning_to_rank"]
+  d06 --> d07["07_sequential_transformer"]
+  d07 --> d08["08_cross_domain_model"]
+  d02 --> d09["09_streaming_personalization"]
+  d06 --> d10["10_contextual_bandit"]
+  d10 --> d11["11_experimentation"]
+  d05 --> d12["12_rag_copilot"]
+  d06 --> d13["13_serving_api"]
+  d08 --> d13
+  d09 --> d13
+  d13 --> d14["14_monitoring"]
+  d13 --> d15["dashboard"]
+  d11 --> d15
+
+  classDef model fill:#EBE8FA,stroke:#5B4BC4,stroke-width:1.4px,color:#2E2470;
+  class d01,d02,d03,d04,d05,d06,d07,d08,d09,d10,d11,d12,d13,d14,d15 model;
+</pre>
+  </div>
+
+  <h3>Folder to component mapping</h3>
+  <details class="bigtable"><summary>Show full table — 15 rows by Folder</summary>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Folder</th><th>Architecture component</th><th>View</th></tr></thead>
+    <tbody>
+      <tr><td><code>01_data_generation</code></td><td>HCP, content, event and graph data generation</td><td class="num">15</td></tr>
+      <tr><td><code>02_spark_feature_pipeline</code></td><td>Lakehouse + offline feature store on Hive-partitioned Delta, point-in-time joins</td><td class="num">03</td></tr>
+      <tr><td><code>03_behavioral_analysis</code></td><td>Journey analytics, Markov chains, cohort analysis</td><td class="num">03</td></tr>
+      <tr><td><code>04_baseline_recommenders</code></td><td>Rules, popularity, CF, matrix factorisation</td><td class="num">08</td></tr>
+      <tr><td><code>05_candidate_generation</code></td><td>Five retrievers + union + ANN index</td><td class="num">04</td></tr>
+      <tr><td><code>06_learning_to_rank</code></td><td>LambdaMART stage-1 ranker</td><td class="num">05</td></tr>
+      <tr><td><code>07_sequential_transformer</code></td><td>SASRec / BERT4Rec sequence rescorer</td><td class="num">05</td></tr>
+      <tr><td><code>08_cross_domain_model</code></td><td>Shared HCP encoder + per-channel heads</td><td class="num">09</td></tr>
+      <tr><td><code>09_streaming_personalization</code></td><td>Kafka → Spark SS → Feast/Redis</td><td class="num">06</td></tr>
+      <tr><td><code>10_contextual_bandit</code></td><td>Thompson / LinUCB channel selection</td><td class="num">10</td></tr>
+      <tr><td><code>11_experimentation</code></td><td>A/B framework, switchback, uplift models</td><td class="num">11</td></tr>
+      <tr><td><code>12_rag_copilot</code></td><td>Graph-RAG explanation layer</td><td class="num">12</td></tr>
+      <tr><td><code>13_serving_api</code></td><td>FastAPI + policy gate + online store</td><td class="num">05</td></tr>
+      <tr><td><code>14_monitoring</code></td><td>Drift, NDCG decay, subgroup performance</td><td class="num">13</td></tr>
+      <tr><td><code>dashboard</code></td><td>Personalization control centre</td><td class="num">13</td></tr>
+    </tbody>
+  </table></div></details>
+</section>
+
+<!-- ─────────────────────────────────────────── -->
+<section class="view" id="v17">
+  <div class="vhead"><span class="vnum">Appendix 4</span><span class="alt">Delivery plan</span></div>
+  <h2>Build order</h2>
+  <p class="col">Ordered so that every phase produces something demonstrable and nothing is blocked on the phase after it.</p>
+
+  <details class="bigtable"><summary>Full build sequence - 12 rows</summary>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Phase</th><th>Build</th><th>Component</th><th>Demonstrates</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>Data generation, temporal splits, EDA</td><td>Data &amp; feature pipeline</td><td>Data mining, user-behaviour modelling</td></tr>
+      <tr><td class="num">2</td><td>Popularity, CF, matrix-factorisation baselines</td><td>Retrieval &amp; ranking baselines</td><td>Recommendation fundamentals</td></tr>
+      <tr><td class="num">3</td><td>Multi-source candidate generator, ANN index</td><td>Candidate generation</td><td>Retrieval and candidate generation</td></tr>
+      <tr><td class="num">4</td><td>LightGBM learning-to-rank <em>+ logging, lineage, model versioning and latency monitoring</em></td><td>Ranking</td><td>Ranking end-to-end</td></tr>
+      <tr><td class="num">5</td><td>Knowledge graph and graph retrieval</td><td>Knowledge graph</td><td>Graph-based recommendation</td></tr>
+      <tr><td class="num">6</td><td>SASRec / BERT4Rec sequence model</td><td>Sequence rescoring</td><td>Transformers and attention</td></tr>
+      <tr><td class="num">7</td><td>Shared cross-brand / cross-channel model</td><td>Cross-channel model</td><td>Cross-vertical personalization</td></tr>
+      <tr><td class="num">8</td><td>Kafka, Spark Streaming, Redis features</td><td>Real-time adaptation</td><td>Real-time session adaptation</td></tr>
+      <tr><td class="num">9</td><td>Contextual bandit and uplift modelling</td><td>Online learning &amp; causal</td><td>Online and incremental learning</td></tr>
+      <tr><td class="num">10</td><td>A/B framework and monitoring</td><td>Experimentation &amp; full drift/subgroup monitoring</td><td>Experimentation and product judgement</td></tr>
+      <tr><td class="num">11</td><td>Grounded RAG pre-call copilot</td><td>Explanation layer</td><td>LLMs in personalization, done compliantly</td></tr>
+      <tr><td class="num">12</td><td>FastAPI, dashboard, this document</td><td>Serving &amp; observability</td><td>Production readiness</td></tr>
+    </tbody>
+  </table>
+  </div></details>
+</section>
+
+</main>
+</div>
+
+<script>
+  // close the contents drawer after a jump, so the reader lands on full-width content
+  document.querySelectorAll('.navpanel a').forEach(function(a){
+    a.addEventListener('click', function(){
+      var d = document.querySelector('details.nav');
+      if (d) d.open = false;
+    });
+  });
+</script>
+
+<footer>
+  <p>Architecture specification. No proprietary data, HCP identity, or confidential content is represented. Ontology class names, relation names and controlled vocabularies follow a published-schema layer.</p>
+</footer>
+
+</div>
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>try{mermaid.initialize({startOnLoad:true,theme:"neutral"});}catch(e){}</script>
+</body></html>
