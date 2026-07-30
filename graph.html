@@ -90,6 +90,10 @@
     .hcp-fig:hover{border-color:var(--accent);transform:translateY(-2px)}
     .hcp-fig img{width:100%;display:block;border-radius:4px}
     .hcp-fig span{display:block;margin-top:9px;font-family:"JetBrains Mono",monospace;font-size:.7rem;letter-spacing:.3px;color:#5c6675;text-align:center}
+    .hcp-facts{display:flex;flex-direction:column;gap:9px;margin-top:6px;border-top:1px solid var(--line);padding-top:16px}
+    .hcp-facts div{font-size:.88rem;color:var(--soft);line-height:1.45}
+    .hcp-facts span{display:inline-block;min-width:82px;font-family:"JetBrains Mono",monospace;font-size:.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--accent);vertical-align:top}
+    .hcp-text .link{margin-top:auto;padding-top:16px}
     @media(max-width:820px){.hcp-split{grid-template-columns:1fr}}
 
     .footer{max-width:var(--maxw);margin:0 auto;padding:40px 24px 60px;border-top:1px solid var(--line);color:var(--mute);font-size:.86rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
@@ -179,6 +183,14 @@
               <p><b>Problem.</b> Approval doesn't produce adoption. Commercial teams must turn clinical evidence, approved content, market access, and omnichannel engagement into one timely, compliant, explainable action per HCP.</p>
               <p><b>Graph decision.</b> An <b>HCP-360 knowledge graph</b> under a production next-best-action platform: retrieve → rank → adjust for business utility → enforce eligibility → explain → measure incrementality. Eligibility is a deterministic graph decision, kept separate from relevance.</p>
               <ul class="stack"><li>HCP-360 KG</li><li>next-best-action</li><li>eligibility rules</li><li>incrementality</li><li>MLR governance</li></ul>
+              <div class="hcp-facts">
+                <div><span>Scale</span> 500K HCPs · 45K HCOs · 1.2M nodes / 14M edges · 40K approved messages</div>
+                <div><span>Data</span> Lakehouse + Kafka/Spark streaming · 340-feature store · point-in-time correct</div>
+                <div><span>Retrieval</span> Five-retriever hybrid union — content lineage, affiliation, barrier matching</div>
+                <div><span>Ranking</span> LightGBM LambdaMART over HCP × action × content × channel tuples</div>
+                <div><span>Trust</span> SHACL validation · entity resolution · end-to-end lineage · deterministic eligibility</div>
+                <div><span>Serving</span> Cited NL→Cypher answers · drift monitoring (PSI, NDCG) · P95 ~180 ms</div>
+              </div>
               <a class="link" href="hcp-nba-architecture.html" target="_blank" rel="noopener">Read the full architecture →</a>
             </div>
             <div class="hcp-figs">
