@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Kavyasri Jadala — Knowledge Graph Engineering</title>
+  <meta name="description" content="Knowledge-graph and Graph-RAG engineering: ontologies (RDF/OWL/SHACL/LinkML), Neo4j and AWS Neptune, graph ML, and retrieval you can cite."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>◆</text></svg>"/>
+  <style>
+    :root{
+      --bg:#0b0d12; --bg2:#10131b; --panel:#141824; --line:#262c3d;
+      --ink:#eef1f7; --soft:#b7bfd0; --mute:#7d8598; --accent:#7cf0c8; --accent2:#8ab4ff;
+      --radius:16px; --maxw:1120px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0; background:var(--bg); color:var(--ink);
+      font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.62;
+      -webkit-font-smoothing:antialiased; overflow-x:hidden;
+    }
+    a{color:inherit;text-decoration:none}
+    .nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;
+      gap:16px;max-width:var(--maxw);margin:0 auto;padding:16px 24px;backdrop-filter:blur(10px)}
+    .nav::after{content:"";position:absolute;inset:0;z-index:-1;
+      background:linear-gradient(180deg,rgba(11,13,18,.86),rgba(11,13,18,.2));border-bottom:1px solid var(--line)}
+    .brand{font-weight:600;letter-spacing:.2px}.brand .mark{color:var(--accent)}
+    .nav-links{display:flex;gap:22px;font-size:.93rem;color:var(--soft)}
+    .nav-links a:hover{color:var(--ink)}
+    main{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+
+    /* hero + graph canvas */
+    .hero{position:relative;padding:70px 0 40px;min-height:520px}
+    #graph{position:absolute;inset:-40px 0 0 0;width:100%;height:560px;z-index:0;
+      -webkit-mask-image:linear-gradient(90deg,transparent 0%,transparent 40%,#000 66%,#000 100%);
+      mask-image:linear-gradient(90deg,transparent 0%,transparent 40%,#000 66%,#000 100%)}
+    .hero-inner{position:relative;z-index:2;max-width:720px;pointer-events:none}
+    .eyebrow{font-family:"JetBrains Mono",monospace;font-size:.78rem;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin:0 0 18px}
+    .hero h1{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:clamp(2.2rem,5.6vw,3.7rem);
+      line-height:1.06;letter-spacing:-1px;margin:0 0 20px}
+    .hero h1 em{font-style:italic;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+    .lede{max-width:600px;color:var(--soft);font-size:1.08rem;margin:0 0 26px}
+    .cta-row{display:flex;flex-wrap:wrap;gap:12px;pointer-events:auto}
+    .btn{display:inline-flex;align-items:center;padding:11px 20px;border-radius:999px;border:1px solid var(--line);
+      background:var(--panel);font-weight:500;font-size:.95rem;transition:.18s}
+    .btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+    .btn-primary{background:var(--accent);color:#04120c;border-color:var(--accent)}
+
+    /* metric strip */
+    .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:8px 0 12px}
+    .metric{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:14px;padding:18px}
+    .metric b{display:block;font-family:"JetBrains Mono",monospace;font-size:1.5rem;color:var(--accent);letter-spacing:-.5px}
+    .metric span{font-size:.8rem;color:var(--mute)}
+
+    section{padding:70px 0;border-top:1px solid var(--line)}
+    .head{max-width:640px;margin:0 0 36px}
+    .head h2{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:clamp(1.6rem,4vw,2.3rem);margin:0 0 10px;letter-spacing:-.5px}
+    .head p{color:var(--soft);margin:0}
+
+    .caps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .cap{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}
+    .cap h3{margin:0 0 8px;font-size:1.05rem}
+    .cap p{margin:0;color:var(--soft);font-size:.92rem}
+    .cap .tags{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px}
+    .cap .tags span{font-family:"JetBrains Mono",monospace;font-size:.72rem;color:var(--mute);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+
+    .cases{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+    .case{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--radius);padding:24px;display:flex;flex-direction:column;gap:12px;transition:.2s}
+    .case:hover{border-color:rgba(124,240,200,.5);transform:translateY(-3px)}
+    .case .top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .case h3{margin:0;font-family:"JetBrains Mono",monospace;font-size:1.2rem}
+    .pill{font-size:.66rem;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--mute)}
+    .pill.live{color:var(--accent);border-color:rgba(124,240,200,.4)}
+    .case .tag{font-family:"JetBrains Mono",monospace;font-size:.75rem;letter-spacing:.4px;text-transform:uppercase;color:var(--accent2);margin:0}
+    .case p{margin:0;color:var(--soft);font-size:.93rem}
+    .case p b{color:var(--ink);font-weight:600}
+    .stack{list-style:none;padding:0;margin:2px 0 0;display:flex;flex-wrap:wrap;gap:6px}
+    .stack li{font-family:"JetBrains Mono",monospace;font-size:.72rem;color:var(--mute);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+    .case .link{margin-top:auto;padding-top:6px;color:var(--accent);font-weight:500;font-size:.9rem}
+    .case .link:hover{text-decoration:underline}
+
+    .footer{max-width:var(--maxw);margin:0 auto;padding:40px 24px 60px;border-top:1px solid var(--line);color:var(--mute);font-size:.86rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+
+    /* scroll reveal */
+    .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
+    .reveal.in{opacity:1;transform:none}
+
+    @media(max-width:820px){
+      .metrics{grid-template-columns:repeat(2,1fr)}
+      .caps{grid-template-columns:1fr}
+      .cases{grid-template-columns:1fr}
+      .nav-links{display:none}
+      #graph{height:460px}
+    }
+    @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="index.html"><span class="mark">◆</span> Kavyasri Jadala</a>
+    <nav class="nav-links">
+      <a href="index.html#work">Work</a>
+      <a href="graph.html">Graph</a>
+      <a href="index.html#about">About</a>
+      <a href="index.html#contact">Contact</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- HERO with animated graph -->
+    <section class="hero">
+      <canvas id="graph"></canvas>
+      <div class="hero-inner">
+        <p class="eyebrow">Knowledge Graph Engineering</p>
+        <h1>I turn tangled enterprise data into <em>graphs you can query, validate, and trust.</em></h1>
+        <p class="lede">
+          Eight years building production-shaped knowledge graphs and Graph-RAG systems —
+          ontologies in RDF/OWL/SHACL/LinkML, Neo4j and AWS Neptune, graph ML, and retrieval
+          that answers in natural language <b>with citations</b>. Across healthcare, security,
+          and commerce.
+        </p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#cases">See the graph work</a>
+          <a class="btn" href="index.html">Full portfolio</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- METRICS -->
+    <div class="metrics reveal">
+      <div class="metric"><b>6</b><span>knowledge graphs, prototype → production-shaped</span></div>
+      <div class="metric"><b>RDF·OWL·SHACL</b><span>+ LinkML governed ontologies</span></div>
+      <div class="metric"><b>Neo4j · Neptune</b><span>Cypher &amp; SPARQL at scale</span></div>
+      <div class="metric"><b>Graph-RAG</b><span>NL → query, cited answers</span></div>
+    </div>
+
+    <!-- CAPABILITIES -->
+    <section id="caps">
+      <div class="head reveal">
+        <h2>What I do with graphs</h2>
+        <p>The full lifecycle — model the domain, load it, query it, reason over it, and serve it back as answers people trust.</p>
+      </div>
+      <div class="caps">
+        <div class="cap reveal"><h3>Ontology &amp; semantic modeling</h3><p>Design the domain as a governed schema — entities, relationships, constraints — and validate every load against it.</p><div class="tags"><span>RDF</span><span>OWL</span><span>SHACL</span><span>LinkML</span><span>TopBraid</span></div></div>
+        <div class="cap reveal"><h3>Graph platforms &amp; query</h3><p>Build and operate the graph on the right engine, and expose it through the query language that fits the workload.</p><div class="tags"><span>Neo4j</span><span>AWS Neptune</span><span>Cypher</span><span>SPARQL</span><span>GraphQL</span></div></div>
+        <div class="cap reveal"><h3>Entity resolution</h3><p>Collapse fragmented identities across systems with probabilistic matching and embeddings, at confidence you can audit.</p><div class="tags"><span>probabilistic matching</span><span>embeddings</span><span>survivorship</span></div></div>
+        <div class="cap reveal"><h3>Graph machine learning</h3><p>Turn structure into signal — centrality, community detection, and graph embeddings that surface what tables can't.</p><div class="tags"><span>PageRank</span><span>Louvain</span><span>node embeddings</span></div></div>
+        <div class="cap reveal"><h3>Graph-RAG</h3><p>Answer natural-language questions over the graph and its documents, returning citations and provenance — not guesses.</p><div class="tags"><span>LangChain</span><span>hybrid retrieval</span><span>NL→Cypher/SPARQL</span></div></div>
+        <div class="cap reveal"><h3>Validation &amp; trust</h3><p>Make the graph safe to act on — SHACL rules, lineage, and evaluation frameworks that catch bad data before it ships.</p><div class="tags"><span>SHACL</span><span>lineage</span><span>eval harness</span></div></div>
+      </div>
+    </section>
+
+    <!-- CASE STUDIES -->
+    <section id="cases">
+      <div class="head reveal">
+        <h2>Selected graph systems</h2>
+        <p>Each starts from a real problem and shows the graph decision that made it work. Numbers are honest, including what's still a prototype.</p>
+      </div>
+      <div class="cases">
+
+        <article class="case reveal">
+          <div class="top"><h3>ontoloop</h3><span class="pill live">Public</span></div>
+          <p class="tag">Pharmacovigilance · SHACL</p>
+          <p><b>Problem.</b> Drug-safety narratives must become structured records, but a language model will produce a record that reads perfectly and is quietly wrong.</p>
+          <p><b>Graph decision.</b> Make the acceptance test a <b>SHACL validator, not another model</b> — an agent loop extracts to RDF and repairs until the shapes graph conforms. The verifier never calls an LLM.</p>
+          <ul class="stack"><li>RDF</li><li>SHACL</li><li>SPARQL</li><li>agent loop</li></ul>
+          <a class="link" href="https://github.com/kavya2693/ontoloop" target="_blank" rel="noopener">View on GitHub →</a>
+        </article>
+
+        <article class="case reveal">
+          <div class="top"><h3>cryptographic-risk KG</h3><span class="pill">Prototype</span></div>
+          <p class="tag">Security · Graph ML</p>
+          <p><b>Problem.</b> Enterprises can't see which cryptographic assets are quantum-vulnerable, or who owns them, across thousands of certificates, keys, and protocols.</p>
+          <p><b>Graph decision.</b> A <b>6,400-node crypto-posture knowledge graph</b> with SHACL validation, risk scoring against NIST/FIPS/PCI, and graph ML to rank vulnerable assets — queried in natural language via NL→Cypher.</p>
+          <ul class="stack"><li>Knowledge Graph</li><li>Graph ML</li><li>SHACL</li><li>NL2Cypher</li></ul>
+          <span class="link">Case study · available on request</span>
+        </article>
+
+        <article class="case reveal">
+          <div class="top"><h3>cex-knowledge-graph</h3><span class="pill">Private</span></div>
+          <p class="tag">Healthcare/Pharma · Neptune</p>
+          <p><b>Problem.</b> Commercial customer data at an enterprise is scattered across 20+ systems with no shared meaning, so every question becomes a bespoke SQL request.</p>
+          <p><b>Graph decision.</b> A production-shaped customer KG — <b>Redshift → S3 → LinkML/RDF → AWS Neptune</b>, an evolving ontology, graph analytics, GraphQL serving, and an evaluation framework to keep it honest.</p>
+          <ul class="stack"><li>AWS Neptune</li><li>LinkML</li><li>RDF</li><li>GraphQL</li></ul>
+          <span class="link">Private · walkthrough on request</span>
+        </article>
+
+        <article class="case reveal">
+          <div class="top"><h3>mincalvina</h3><span class="pill">Private</span></div>
+          <p class="tag">Privacy-first KG · Streaming</p>
+          <p><b>Problem.</b> A commercial knowledge graph is only usable if sensitive identities never leak — de-identification can't be an afterthought bolted on at the end.</p>
+          <p><b>Graph decision.</b> A <b>de-identification moat</b> (AWS Secrets Manager/KMS) wrapped around a streaming ingestion pipeline into an evolving LinkML ontology, with GraphQL, caching, graph analytics, and evaluation.</p>
+          <ul class="stack"><li>LinkML</li><li>KMS</li><li>streaming</li><li>graph analytics</li></ul>
+          <span class="link">Private · walkthrough on request</span>
+        </article>
+
+        <article class="case reveal">
+          <div class="top"><h3>Graph-RAG customer intelligence</h3><span class="pill">Prototype</span></div>
+          <p class="tag">E-commerce · Graph-RAG</p>
+          <p><b>Problem.</b> Business teams want answers about customers in plain English, not another dashboard or a two-day SQL wait.</p>
+          <p><b>Graph decision.</b> A <b>4,300-node / 225k-edge</b> customer graph with PageRank, Louvain communities, and SVD embeddings, behind an NL→Cypher assistant that answers <b>with citations</b>.</p>
+          <ul class="stack"><li>Neo4j</li><li>graph embeddings</li><li>NL2Cypher</li><li>RAG</li></ul>
+          <span class="link">Case study · available on request</span>
+        </article>
+
+        <article class="case reveal">
+          <div class="top"><h3>blastradius</h3><span class="pill live">Public</span></div>
+          <p class="tag">Data lineage · Reachability</p>
+          <p><b>Problem.</b> A dropped column looks unused to dbt, then breaks a pandas script and a tablet app nobody linked to it.</p>
+          <p><b>Graph decision.</b> Parse SQL and Python into <b>one dependency graph</b>, so "what breaks if I change this column" becomes a reachability query — statically, before the change ships.</p>
+          <ul class="stack"><li>graph</li><li>static analysis</li><li>reachability</li></ul>
+          <a class="link" href="https://github.com/kavya2693/blastradius" target="_blank" rel="noopener">View on GitHub →</a>
+        </article>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>© <span id="y"></span> Kavyasri Jadala</span>
+    <span><a href="index.html">Portfolio</a> · <a href="https://github.com/kavya2693" target="_blank" rel="noopener">GitHub</a> · <a href="mailto:kavyasri.2693@gmail.com">Email</a></span>
+  </footer>
+
+  <script>
+    document.getElementById("y").textContent = new Date().getFullYear();
+
+    /* Scroll reveal */
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target);} });
+    }, {threshold:.12});
+    document.querySelectorAll(".reveal").forEach(function(el){ io.observe(el); });
+
+    /* Animated knowledge-graph canvas (lightweight force layout) */
+    (function(){
+      var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var canvas = document.getElementById("graph");
+      var ctx = canvas.getContext("2d");
+      var DPR = Math.min(window.devicePixelRatio||1, 2);
+      var W, H;
+      var labels = ["Ontology","SHACL","Neo4j","Neptune","SPARQL","Cypher","RDF","OWL","LinkML",
+                    "Graph-RAG","Entity Resolution","Embeddings","PageRank","Louvain","GraphQL","NL2Cypher"];
+      var nodes = [], edges = [];
+
+      function size(){
+        W = canvas.clientWidth; H = canvas.clientHeight;
+        canvas.width = W*DPR; canvas.height = H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0);
+      }
+      function build(){
+        nodes = []; edges = [];
+        var N = W < 700 ? 16 : 26;
+        for(var i=0;i<N;i++){
+          nodes.push({
+            x: Math.random()*W, y: Math.random()*H*0.9,
+            vx:0, vy:0,
+            r: i<labels.length ? 4.5 : 2.5,
+            label: i<labels.length ? labels[i] : null
+          });
+        }
+        // connect each node to 1-2 nearest for a graph-like mesh
+        for(var a=0;a<nodes.length;a++){
+          var d1=1e9,d2=1e9,i1=-1,i2=-1;
+          for(var b=0;b<nodes.length;b++){ if(a===b)continue;
+            var dx=nodes[a].x-nodes[b].x, dy=nodes[a].y-nodes[b].y, d=dx*dx+dy*dy;
+            if(d<d1){d2=d1;i2=i1;d1=d;i1=b;} else if(d<d2){d2=d;i2=b;}
+          }
+          if(i1>a) edges.push([a,i1]); if(i2>a) edges.push([a,i2]);
+        }
+      }
+      function step(){
+        // gentle repulsion + spring — capped for calm motion
+        for(var i=0;i<nodes.length;i++){
+          for(var j=i+1;j<nodes.length;j++){
+            var dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y;
+            var d=Math.sqrt(dx*dx+dy*dy)||1; if(d>220)continue;
+            var f=Math.min(60/(d*d),0.08);
+            nodes[i].vx+=dx/d*f; nodes[i].vy+=dy/d*f;
+            nodes[j].vx-=dx/d*f; nodes[j].vy-=dy/d*f;
+          }
+        }
+        edges.forEach(function(e){
+          var a=nodes[e[0]], b=nodes[e[1]];
+          var dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1, f=(d-120)*0.0009;
+          a.vx+=dx/d*f; a.vy+=dy/d*f; b.vx-=dx/d*f; b.vy-=dy/d*f;
+        });
+        nodes.forEach(function(n){
+          n.vx+=(W*0.62-n.x)*0.00018; n.vy+=(H*0.42-n.y)*0.00018; // drift to center-right
+          n.vx*=0.94; n.vy*=0.94;
+          n.x+=n.vx; n.y+=n.vy;
+          if(n.x<10)n.x=10; if(n.x>W-10)n.x=W-10; if(n.y<10)n.y=10; if(n.y>H-10)n.y=H-10;
+        });
+      }
+      function draw(){
+        ctx.clearRect(0,0,W,H);
+        ctx.lineWidth=1;
+        edges.forEach(function(e){
+          var a=nodes[e[0]], b=nodes[e[1]];
+          var dx=a.x-b.x, dy=a.y-b.y, d=Math.sqrt(dx*dx+dy*dy);
+          ctx.strokeStyle="rgba(124,240,200,"+Math.max(0,0.30-d/900).toFixed(3)+")";
+          ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+        });
+        nodes.forEach(function(n){
+          ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,6.283);
+          ctx.fillStyle = n.label ? "rgba(124,240,200,0.9)" : "rgba(138,180,255,0.55)";
+          ctx.fill();
+          if(n.label){
+            ctx.beginPath(); ctx.arc(n.x,n.y,n.r+4,0,6.283);
+            ctx.strokeStyle="rgba(124,240,200,0.25)"; ctx.stroke();
+            ctx.font="11px 'JetBrains Mono', monospace";
+            ctx.fillStyle="rgba(183,191,208,0.85)";
+            ctx.fillText(n.label, n.x+9, n.y+3);
+          }
+        });
+      }
+      var running=true;
+      function loop(){ if(!running)return; step(); draw(); requestAnimationFrame(loop); }
+      function start(){ size(); build(); if(reduce){ for(var k=0;k<160;k++)step(); draw(); } else { running=true; loop(); } }
+      window.addEventListener("resize", function(){ size(); build(); });
+      document.addEventListener("visibilitychange", function(){ running=!document.hidden; if(running&&!reduce)loop(); });
+      start();
+    })();
+  </script>
+</body>
+</html>
