@@ -55,16 +55,16 @@
     .metric b{display:block;font-family:"JetBrains Mono",monospace;font-size:1.5rem;color:var(--accent);letter-spacing:-.5px}
     .metric span{font-size:.8rem;color:var(--mute)}
 
-    section{padding:70px 0;border-top:1px solid var(--line)}
-    .head{max-width:640px;margin:0 0 36px}
+    section{padding:54px 0;border-top:1px solid var(--line)}
+    .head{max-width:640px;margin:0 0 26px}
     .head h2{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:clamp(1.6rem,4vw,2.3rem);margin:0 0 10px;letter-spacing:-.5px}
     .head p{color:var(--soft);margin:0}
 
-    .caps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-    .cap{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}
-    .cap h3{margin:0 0 8px;font-size:1.05rem}
-    .cap p{margin:0;color:var(--soft);font-size:.92rem}
-    .cap .tags{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px}
+    .caps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .cap{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+    .cap h3{margin:0 0 6px;font-size:1rem}
+    .cap p{margin:0;color:var(--soft);font-size:.88rem}
+    .cap .tags{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
     .cap .tags span{font-family:"JetBrains Mono",monospace;font-size:.72rem;color:var(--mute);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
 
     .cases{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
@@ -170,12 +170,12 @@
         <p>The full lifecycle — model the domain, load it, query it, reason over it, and serve it back as answers people trust.</p>
       </div>
       <div class="caps">
-        <div class="cap reveal"><h3>Ontology &amp; semantic modeling</h3><p>Design the domain as a governed schema — entities, relationships, constraints — and validate every load against it.</p><div class="tags"><span>RDF</span><span>OWL</span><span>SHACL</span><span>LinkML</span><span>TopBraid</span></div></div>
-        <div class="cap reveal"><h3>Graph platforms &amp; query</h3><p>Build and operate the graph on the right engine, and expose it through the query language that fits the workload.</p><div class="tags"><span>Neo4j</span><span>AWS Neptune</span><span>Cypher</span><span>SPARQL</span><span>GraphQL</span></div></div>
-        <div class="cap reveal"><h3>Entity resolution</h3><p>Collapse fragmented identities across systems with probabilistic matching and embeddings, at confidence you can audit.</p><div class="tags"><span>probabilistic matching</span><span>embeddings</span><span>survivorship</span></div></div>
-        <div class="cap reveal"><h3>Graph machine learning</h3><p>Turn structure into signal — centrality, community detection, and graph embeddings that surface what tables can't.</p><div class="tags"><span>PageRank</span><span>Louvain</span><span>node embeddings</span></div></div>
-        <div class="cap reveal"><h3>Graph-RAG</h3><p>Answer natural-language questions over the graph and its documents, returning citations and provenance — not guesses.</p><div class="tags"><span>LangChain</span><span>hybrid retrieval</span><span>NL→Cypher/SPARQL</span></div></div>
-        <div class="cap reveal"><h3>Validation &amp; trust</h3><p>Make the graph safe to act on — SHACL rules, lineage, and evaluation frameworks that catch bad data before it ships.</p><div class="tags"><span>SHACL</span><span>lineage</span><span>eval harness</span></div></div>
+        <div class="cap reveal"><h3>Ontology &amp; semantic modeling</h3><p>Governed schemas — entities, relationships, constraints — validated on every load.</p><div class="tags"><span>RDF</span><span>OWL</span><span>SHACL</span><span>LinkML</span><span>TopBraid</span></div></div>
+        <div class="cap reveal"><h3>Graph platforms &amp; query</h3><p>The right engine, exposed through the query language that fits the workload.</p><div class="tags"><span>Neo4j</span><span>AWS Neptune</span><span>Cypher</span><span>SPARQL</span><span>GraphQL</span></div></div>
+        <div class="cap reveal"><h3>Entity resolution</h3><p>Collapse fragmented identities with probabilistic matching and embeddings.</p><div class="tags"><span>probabilistic matching</span><span>embeddings</span><span>survivorship</span></div></div>
+        <div class="cap reveal"><h3>Graph machine learning</h3><p>Centrality, community detection, and embeddings that surface what tables can't.</p><div class="tags"><span>PageRank</span><span>Louvain</span><span>node embeddings</span></div></div>
+        <div class="cap reveal"><h3>Graph-RAG</h3><p>Natural-language answers over the graph, with citations and provenance.</p><div class="tags"><span>LangChain</span><span>hybrid retrieval</span><span>NL→Cypher/SPARQL</span></div></div>
+        <div class="cap reveal"><h3>Validation &amp; trust</h3><p>SHACL, lineage, and evaluation that catch bad data before it ships.</p><div class="tags"><span>SHACL</span><span>lineage</span><span>eval harness</span></div></div>
       </div>
     </section>
 
