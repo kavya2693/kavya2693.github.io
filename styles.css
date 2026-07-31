@@ -187,3 +187,24 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; transition: none !important; }
 }
+
+/* ---------- All repositories (live from GitHub) ---------- */
+.repos-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; margin: 46px 0 18px;
+}
+.repos-head h3 { margin: 0; font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 1.2rem; }
+.repos-head a { color: var(--accent); font-size: .9rem; }
+.repos-head a:hover { text-decoration: underline; }
+.repogrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); gap: 14px; }
+.repo {
+  display: flex; flex-direction: column; gap: 6px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 15px 17px; transition: .18s ease; min-height: 96px;
+}
+.repo:hover { border-color: rgba(124,240,200,.5); transform: translateY(-2px); }
+.repo .rname { font-family: ui-monospace, "JetBrains Mono", Menlo, monospace; font-size: .93rem; color: var(--ink); }
+.repo .rdesc { font-size: .84rem; color: var(--ink-soft); line-height: 1.5; flex: 1; }
+.repo .rmeta { display: flex; gap: 14px; font-family: ui-monospace, Menlo, monospace; font-size: .72rem; color: var(--ink-mute); margin-top: 2px; }
+.repo .rmeta .lang::before { content: "● "; color: var(--accent-2); }
+@media (max-width: 560px) { .repogrid { grid-template-columns: 1fr; } }

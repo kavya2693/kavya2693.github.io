@@ -67,6 +67,35 @@
   render("projects", typeof PROJECTS !== "undefined" ? PROJECTS : [], projectCard);
   render("video-grid", typeof VIDEOS !== "undefined" ? VIDEOS : [], videoCard);
 
+  // All repositories — fetched live from the GitHub API so the list stays current.
+  var repoEl = document.getElementById("all-repos");
+  if (repoEl) {
+    var skip = { "kavya2693": 1 }; // the profile-README repo, not a project
+    fetch("https://api.github.com/users/kavya2693/repos?per_page=100&sort=pushed")
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (repos) {
+        var list = repos
+          .filter(function (r) { return !r.fork && !r.archived && !skip[r.name]; })
+          .sort(function (a, b) {
+            return (b.stargazers_count - a.stargazers_count) ||
+                   (new Date(b.pushed_at) - new Date(a.pushed_at));
+          });
+        repoEl.innerHTML = list.map(function (r) {
+          var desc = r.description ? esc(r.description) : "";
+          var lang = r.language ? '<span class="lang">' + esc(r.language) + "</span>" : "";
+          var star = r.stargazers_count ? "<span>★ " + r.stargazers_count + "</span>" : "";
+          return '<a class="repo" href="' + esc(r.html_url) + '" target="_blank" rel="noopener">' +
+            '<span class="rname">' + esc(r.name) + "</span>" +
+            '<span class="rdesc">' + desc + "</span>" +
+            '<span class="rmeta">' + lang + star + "</span></a>";
+        }).join("") || '<p class="muted">No public repositories.</p>';
+      })
+      .catch(function () {
+        repoEl.innerHTML = '<p class="muted">View all on ' +
+          '<a href="https://github.com/kavya2693" target="_blank" rel="noopener" style="color:var(--accent)">GitHub →</a></p>';
+      });
+  }
+
   var y = document.getElementById("year");
   if (y) y.textContent = new Date().getFullYear();
 })();
