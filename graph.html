@@ -74,6 +74,7 @@
     .case h3{margin:0;font-family:"JetBrains Mono",monospace;font-size:1.2rem}
     .pill{font-size:.66rem;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--mute)}
     .pill.live{color:var(--accent);border-color:rgba(124,240,200,.4)}
+    .pill{white-space:nowrap;flex-shrink:0}
     .case .tag{font-family:"JetBrains Mono",monospace;font-size:.75rem;letter-spacing:.4px;text-transform:uppercase;color:var(--accent2);margin:0}
     .case p{margin:0;color:var(--soft);font-size:.93rem}
     .case p b{color:var(--ink);font-weight:600}
@@ -98,6 +99,45 @@
     .case-fig:hover{border-color:rgba(124,240,200,.55)}
     .case-fig img{width:100%;display:block;border-radius:3px}
     @media(max-width:820px){.hcp-split{grid-template-columns:1fr}}
+
+    /* domain tabs */
+    .tabs{display:inline-flex;gap:6px;padding:6px;margin:4px 0 30px;border:1px solid var(--line);border-radius:999px;background:var(--bg2)}
+    .tab{appearance:none;border:0;cursor:pointer;display:inline-flex;align-items:center;gap:10px;padding:10px 20px;border-radius:999px;
+      background:transparent;color:var(--soft);font:500 .95rem "Inter",system-ui,sans-serif;transition:.2s}
+    .tab:hover{color:var(--ink)}
+    .tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    .tab .n{font-family:"JetBrains Mono",monospace;font-size:.72rem;color:var(--mute);border:1px solid var(--line);border-radius:999px;padding:1px 8px;transition:.2s}
+    .tab[aria-selected="true"]{background:linear-gradient(90deg,rgba(124,240,200,.16),rgba(138,180,255,.12));color:var(--ink);box-shadow:inset 0 0 0 1px rgba(124,240,200,.45)}
+    .tab[aria-selected="true"] .n{color:var(--accent);border-color:rgba(124,240,200,.45)}
+    .panel[hidden]{display:none}
+    .panel-intro{max-width:680px;color:var(--soft);margin:-8px 0 24px}
+
+    /* claims: stage flow + result tiles */
+    .flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:4px}
+    .flow span{font-family:"JetBrains Mono",monospace;font-size:.74rem;color:var(--ink);border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 10px}
+    .flow span.hot{border-color:rgba(124,240,200,.55);color:var(--accent)}
+    .flow i{font-style:normal;color:var(--mute);font-size:.8rem}
+    .flow.v{flex-direction:column;align-items:stretch;gap:0}
+    .flow.v span{position:relative;display:flex;align-items:center;gap:10px;margin-bottom:10px}
+    .flow.v span:last-child{margin-bottom:0}
+    .flow.v span:not(:last-child)::after{content:"";position:absolute;left:19px;top:100%;height:10px;border-left:1px solid var(--line)}
+    .flow.v em{font-style:normal;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;border:1px solid currentColor;font-size:.64rem;opacity:.8}
+    .wins{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .win{border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--bg)}
+    .win b{display:block;font-family:"JetBrains Mono",monospace;font-size:1.55rem;letter-spacing:-.5px;color:var(--accent);line-height:1.2}
+    .win span{font-size:.8rem;color:var(--mute);line-height:1.4;display:block;margin-top:4px}
+    .figbox{border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--bg);display:flex;flex-direction:column;gap:12px}
+    .figbox .cap-t{font-family:"JetBrains Mono",monospace;font-size:.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--mute)}
+    .next{margin-top:26px;border:1px dashed var(--line);border-radius:var(--radius);padding:20px 22px}
+    .next h4{margin:0 0 12px;font-family:"JetBrains Mono",monospace;font-size:.72rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--accent2)}
+    .next .chips .chip{opacity:1;transform:none}
+    @media(max-width:820px){.wins{grid-template-columns:1fr 1fr}}
+    @media(max-width:560px){
+      .tabs{display:flex;width:100%}
+      .tab{flex:1;justify-content:center;padding:10px 12px}
+      .wins{grid-template-columns:1fr}
+      .flow i{display:none}
+    }
 
     /* whoami: animated cypher bio + skill chips */
     .whoami-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:30px;align-items:start}
@@ -154,6 +194,7 @@
     <nav class="nav-links">
       <a href="index.html#work">Work</a>
       <a href="graph.html">Graph</a>
+      <a href="graph.html#claims">Claims</a>
       <a href="index.html#about">About</a>
       <a href="index.html#contact">Contact</a>
     </nav>
@@ -206,8 +247,14 @@
     <!-- CASE STUDIES -->
     <section id="cases">
       <div class="head reveal">
-        <h2>Selected graph systems</h2>
+        <h2>Selected systems</h2>
       </div>
+      <div class="tabs" role="tablist" aria-label="Work by domain">
+        <button class="tab" role="tab" id="tab-commercial" aria-controls="panel-commercial" aria-selected="true">Commercialization <span class="n">10</span></button>
+        <button class="tab" role="tab" id="tab-claims" aria-controls="panel-claims" aria-selected="false" tabindex="-1">Claims <span class="n">4</span></button>
+      </div>
+
+      <div class="panel" id="panel-commercial" role="tabpanel" aria-labelledby="tab-commercial">
       <div class="cases">
 
         <article class="case reveal" style="grid-column:1/-1;border-color:rgba(124,240,200,.45)">
@@ -332,6 +379,88 @@
         </article>
 
       </div>
+      </div>
+
+      <div class="panel" id="panel-claims" role="tabpanel" aria-labelledby="tab-claims" hidden>
+        <p class="panel-intro">A claim is where a payer's rules meet a provider's paperwork. Most of the cost is in the gap between the two: days lost waiting on approvals, denials nobody can explain, and resubmissions that fail for a reason that was there all along.</p>
+        <div class="cases">
+
+        <article class="case reveal" style="grid-column:1/-1;border-color:rgba(124,240,200,.45)">
+          <div class="top"><h3>Patient-access &amp; prior-auth funnel</h3><span class="pill">Enterprise · Private</span></div>
+          <div class="hcp-split">
+            <div class="hcp-text">
+              <p class="tag">Pharma · Prior authorization · Payer approval</p>
+              <p><b>Problem.</b> Cardiology patients were waiting too long for their first fill. Benefits checks, prior authorization, and a mandatory safety program (REMS) each added days, and nobody could see which stage the time was lost in.</p>
+              <p><b>Decision.</b> Build it in-house instead of buying a vendor tool, and break the journey into <b>tracked, predictive stage metrics</b> from enrollment to shipment, so field reimbursement teams could see a stuck case and act on it without waiting for a report.</p>
+              <ul class="stack"><li>prior authorization</li><li>benefits verification</li><li>REMS</li><li>Microsoft Fabric</li><li>Power BI</li><li>Copilot</li></ul>
+              <div class="hcp-facts">
+                <div><span>Scale</span> 335 top prescribing practices</div>
+                <div><span>Call</span> Build over buy — internal capability instead of an external vendor</div>
+                <div><span>Measure</span> Sub-stage cycle times, not one end-to-end average</div>
+              </div>
+              <span class="link">Private · walkthrough on request</span>
+            </div>
+            <div class="hcp-figs">
+              <div class="figbox">
+                <span class="cap-t">Where the days went</span>
+                <div class="flow v"><span><em>1</em>Enrollment</span><span class="hot"><em>2</em>Benefits check</span><span class="hot"><em>3</em>Prior authorization</span><span><em>4</em>REMS safety program</span><span><em>5</em>Shipment · first paid fill</span></div>
+              </div>
+              <div class="wins">
+                <div class="win"><b>1.7 d</b><span>faster payer approval</span></div>
+                <div class="win"><b>~7 d</b><span>faster first paid fill</span></div>
+                <div class="win"><b>335</b><span>practices instrumented</span></div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="case reveal">
+          <div class="top"><h3>Claims knowledge graph</h3><span class="pill live">Current role</span></div>
+          <p class="tag">Healthcare claims · Knowledge graph</p>
+          <p><b>Problem.</b> Medical receipts arrive as unstructured documents, so a claim can't be traced back to what was actually billed, and every question about it starts with a manual lookup.</p>
+          <p><b>Graph decision.</b> Link <b>receipts to the claims built from them</b> in one knowledge graph, fed by AI extraction that turns receipts into structured claim data, with schema validation and human review before anything reaches a claim.</p>
+          <ul class="stack"><li>knowledge graph</li><li>document extraction</li><li>schema validation</li><li>human review</li></ul>
+          <div class="figbox"><div class="flow"><span>Receipt</span><i>→</i><span>Extract</span><i>→</i><span class="hot">Validate</span><i>→</i><span>Claim graph</span></div></div>
+          <span class="link">Current work · details on request</span>
+        </article>
+
+        <article class="case reveal">
+          <div class="top"><h3>claimcheck</h3><span class="pill live">In build</span></div>
+          <p class="tag">Adjudication · Abu Dhabi e-claims</p>
+          <p><b>Problem.</b> A denied claim comes back with one code per line. The provider fixes that one, resubmits, and is denied again for a reason that was there all along.</p>
+          <p><b>Decision.</b> An open-source adjudication engine where <b>the rules are config, not code</b>, running on Abu Dhabi DOH e-claim formats and denial codes. Every decision carries a trace of rule, evidence, and amount, and accuracy is measured against claims whose right answer is known before the engine runs.</p>
+          <ul class="stack"><li>DOH e-claims XML</li><li>rules as config</li><li>denial trace</li><li>Python</li><li>DuckDB</li></ul>
+          <div class="figbox"><div class="flow"><span>Claim XML</span><i>→</i><span>Eligibility</span><i>→</i><span>Auth</span><i>→</i><span>Coding</span><i>→</i><span>Pricing</span><i>→</i><span class="hot">Remittance + trace</span></div></div>
+          <span class="link">Open source · publishing soon</span>
+        </article>
+
+        <article class="case reveal" style="grid-column:1/-1">
+          <div class="top"><h3>Reimbursement dossiers at market speed</h3><span class="pill">Enterprise · Private</span></div>
+          <div class="hcp-split">
+            <div class="hcp-text">
+              <p class="tag">Market access · Reimbursement · GenAI</p>
+              <p><b>Problem.</b> Every country's health-technology-assessment body wants the same reimbursement evidence in its own format. Adapting one dossier took about three months, so smaller markets waited quarters before patients could get the drug reimbursed.</p>
+              <p><b>Decision.</b> Generate the market adaptations from the core evidence package with GenAI, <b>replacing agency drafting</b>, so several markets can file in parallel instead of in a queue.</p>
+              <ul class="stack"><li>HTA dossiers</li><li>reimbursement</li><li>GenAI</li><li>parallel filings</li></ul>
+              <span class="link">Private · walkthrough on request</span>
+            </div>
+            <div class="hcp-figs">
+              <div class="wins">
+                <div class="win"><b>~3 mo → 1 wk</b><span>per market adaptation</span></div>
+                <div class="win"><b>~25</b><span>markets</span></div>
+                <div class="win"><b>6</b><span>low- and middle-income countries</span></div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        </div>
+
+        <div class="next reveal">
+          <h4>Next in the claims series · open source</h4>
+          <div class="chips"><span class="chip">Denial prediction &amp; root cause</span><span class="chip">Prior-auth copilot</span><span class="chip">Claims fraud graph</span><span class="chip">Claims platform PRD</span></div>
+        </div>
+      </div>
     </section>
 
     <!-- WHOAMI: animated cypher bio + skills -->
@@ -366,6 +495,39 @@
       es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target);} });
     }, {threshold:.12});
     document.querySelectorAll(".reveal").forEach(function(el){ io.observe(el); });
+
+    /* Domain tabs: arrow keys move between tabs; #claims in the URL opens that tab */
+    (function(){
+      var tabs = [].slice.call(document.querySelectorAll('.tab'));
+      function show(tab, focus){
+        tabs.forEach(function(t){
+          var on = t === tab;
+          t.setAttribute('aria-selected', on);
+          t.tabIndex = on ? 0 : -1;
+          var p = document.getElementById(t.getAttribute('aria-controls'));
+          p.hidden = !on;
+          if(on) p.querySelectorAll('.reveal:not(.in)').forEach(function(el){ io.unobserve(el); io.observe(el); });
+        });
+        if(focus) tab.focus();
+      }
+      tabs.forEach(function(t, i){
+        t.addEventListener('click', function(){
+          show(t);
+          history.replaceState(null, '', t.id === 'tab-claims' ? '#claims' : '#cases');
+        });
+        t.addEventListener('keydown', function(e){
+          if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+          show(tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length], true);
+        });
+      });
+      function fromHash(){
+        if(location.hash !== '#claims') return;
+        show(document.getElementById('tab-claims'));
+        document.getElementById('cases').scrollIntoView();
+      }
+      window.addEventListener('hashchange', fromHash);
+      fromHash();
+    })();
 
     /* line-by-line cypher + skill-chip animations */
     var runIO = new IntersectionObserver(function(es){
