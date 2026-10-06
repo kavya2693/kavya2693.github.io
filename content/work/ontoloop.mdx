@@ -1,0 +1,124 @@
+<S n="01" t="Problem">
+
+When a patient has a bad reaction to a drug, someone writes it down in prose — a doctor on a hotline, a pharmacist filing a report, a nurse typing into a form. Before it can be used it must become a structured record: which drug, which event, how severe, what date, what outcome. That conversion is done by hand, by trained people, at volume, against reporting clocks measured in days.
+
+</S>
+
+<S n="02" t="Context">
+
+A language model looks well suited to the reading. The obstacle is trust: a model will produce a record that reads perfectly and contains an invented date, a severity that contradicts the narrative, or a field it quietly dropped. "We asked another model and it said the first one did fine" is not reproducible, shares the first model's blind spots, and is not a criterion you can show a regulator.
+
+</S>
+
+<S n="03" t="Data">
+
+- **20 synthetic adverse-event narratives** with ground-truth records (seed 20260720), from a generator that can produce 200.
+- An ontology defined in LinkML, from which the SHACL shapes are generated.
+- Everything runs locally on CPU — safety narratives should not leave the building.
+
+</S>
+
+<S n="04" t="Architecture">
+
+<Flow label="Validator, not an opinion" flow={[
+  { t: "Narrative" },
+  { t: "LLM extraction", d: "structured record" },
+  { t: "RDF conversion" },
+  { t: "SHACL + SPARQL validation", d: "deterministic · no model calls" },
+  { t: "Violations → repair instructions", d: "loop: ≤ 4 rounds or no progress" },
+  { t: "Best conformant graph" },
+]} />
+
+</S>
+
+<S n="05" t="What I built">
+
+The whole repository: ontology and shapes, the extraction and repair loop, the corpus generator, the four-arm benchmark and the write-up. A generated shape — closed, with enumerated severity and outcome, an ID pattern and exactly-one cardinality:
+
+<Code lang="turtle" title="ontoloop/ontology/generated_shapes.ttl" href="https://github.com/kavya2693/ontoloop/blob/main/ontology/generated_shapes.ttl#L37-L57" code={`pv:AdverseEvent a sh:NodeShape ;
+    rdfs:comment "An untoward medical occurrence. Must name exactly one suspect drug, which is what makes the report actionable for signal detection." ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:in ( "mild" "moderate" "severe" "life_threatening" "fatal" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:order 2 ;
+            sh:path pv:severity ],
+        [ sh:datatype xsd:string ;
+            sh:description "Stable identifier, prefixed by record type." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 0 ;
+            sh:path pv:id ;
+            sh:pattern "^(CASE|PT|DRUG|AE)-[0-9]{6}$" ],
+        [ sh:in ( "recovered" "recovering" "not_recovered" "fatal" "unknown" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:order 3 ;
+            sh:path pv:outcome ],`} />
+
+</S>
+
+<S n="06" t="Modeling / AI approach">
+
+The stop condition is cardinality, datatypes, enumerations, patterns — and **SPARQL rules for constraints a schema cannot express on its own**, like the fact that a drug cannot cause an event that began before the first dose:
+
+<Code lang="turtle" title="ontoloop/ontology/rules.ttl" href="https://github.com/kavya2693/ontoloop/blob/main/ontology/rules.ttl#L16-L29" code={`pv:OnsetNotBeforeDrugStart
+    a sh:SPARQLConstraint ;
+    rdfs:label "onset before drug start" ;
+    sh:message "Event onset {?onset} precedes suspect drug start {?start}; a drug cannot cause an event that began before it was administered." ;
+    sh:prefixes pv: ;
+    sh:select """
+        SELECT $this ?onset ?start
+        WHERE {
+            $this pv:onset_date ?onset ;
+                  pv:suspect_drug ?drug .
+            ?drug pv:start_date ?start .
+            FILTER (?onset < ?start)
+        }
+    """ .`} />
+
+Violations are rewritten as imperative repair instructions and fed back. Same input, same violations, every run — that reproducibility is what makes the loop measurable.
+
+</S>
+
+<S n="07" t="Evaluation">
+
+Four arms, two metrics that can disagree — structural conformance and field accuracy:
+
+| Arm | Conformance | Field accuracy | p50 latency | Output tokens |
+|---|---|---|---|---|
+| llama3.2 3B | 0% | 71.0% | 9.2 s | 3,300 |
+| phi4 14B | 65% | **85.5%** | 27.2 s | 3,693 |
+| 3B + loop | **85%** | 78.5% | 19.0 s | 7,971 |
+| 14B + loop | 80% | 83.5% | 31.6 s | 5,826 |
+
+A 3B model that could not produce a single valid record on its own produces 17 of 20 once a verifier tells it what is wrong — beating a model nearly five times its size in less wall-clock time.
+
+**And the loop makes factual accuracy worse.** Case by case, repair improved accuracy on zero of twenty cases and damaged three.
+
+</S>
+
+<S n="08" t="Production considerations">
+
+- **Pick the arm by the requirement.** If downstream needs valid records, run the small model with the loop. If it needs correct ones, run the large model without it.
+- **Conformance is not correctness.** Asked to fill a missing start date it cannot find, a model supplies a plausible one — and a plausible date satisfies every shape.
+- **Cost is visible.** The loop roughly doubles output tokens for the small model; that is the price of validity.
+
+</S>
+
+<S n="09" t="Results">
+
+- **0% → 85%** conformant records from a 3B model with the loop.
+- **85.5% → 83.5%** field accuracy when the loop is added to the 14B model.
+- A reproducible, open-source harness with CI.
+
+</S>
+
+<S n="10" t="Tradeoffs / lessons">
+
+SHACL rejects `severity: "very bad"` because the ontology enumerates the legal values. It cannot reject `severity: "mild"` on a narrative that says *requiring hospital admission*, because that is a claim about the world, not about the schema.
+
+<Note>Constraint-guided repair buys structural validity and pays for it in correctness. Know which of the two you are measuring.</Note>
+
+</S>

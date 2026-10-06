@@ -1,0 +1,118 @@
+<S n="01" t="Problem">
+
+In pharma, AI may only recommend or generate content that has passed medical, legal and regulatory (MLR) review — and someone must be able to prove which approved claim each sentence came from. Market-access teams also present the same reimbursement evidence in a different format for every country: adapting one dossier took **about three months**, so smaller markets waited quarters before patients could get the drug reimbursed.
+
+</S>
+
+<S n="02" t="Context">
+
+- **Users:** brand, field and market-access teams; MLR reviewers; regional affiliates.
+- **Constraint:** generative AI is fast but ungoverned; regulated content is governed but slow. Without lineage, nothing generated is usable.
+- **Goal:** recommendations and generated documents built only from approved content, with lineage that survives an audit.
+
+</S>
+
+<S n="03" t="Data">
+
+- **Customer signals:** profile, specialty and engagement history.
+- **Content metadata:** asset, key message, claim, supporting evidence, approval status and approval ID, market, expiry.
+- **Lineage edges:** which slide or message used which claim, which claim rests on which evidence, which approval covers it.
+
+</S>
+
+<S n="04" t="Architecture">
+
+<Flow label="Recommend and generate only what can be traced" flow={[
+  { t: "Customer", d: "profile · specialty" },
+  { t: "Interactions", d: "engagement history" },
+  { t: "Content / metadata graph", d: "asset → claim → evidence → approval" },
+  { t: "Eligibility filter", d: "approved · in-market · not expired" },
+  { t: "Ranking / recommendation", d: "relevance among eligible content" },
+  { t: "Generated output", d: "slides, dossiers, messages" },
+  { t: "Evidence / content lineage", d: "every sentence → source + approval ID" },
+]} />
+
+Eligibility comes **before** ranking and is deterministic. A model decides what is most relevant; it never decides what is allowed.
+
+</S>
+
+<S n="05" t="What I built">
+
+- The **content-lineage data product** at Bristol Myers Squibb.
+- **GenAI market adaptation** of reimbursement dossiers, replacing agency drafting so markets could file in parallel.
+- Two public companions on synthetic data: a governance catalog with impact and provenance analysis, and a governed slide generator.
+
+The generation gate from the public slide generator — a claim that is not approved never reaches a slide, and every slide that is rendered carries its approval:
+
+<Code lang="python" title="governed-slide-generator/src/build_deck.py" href="https://github.com/kavya2693/governed-slide-generator/blob/main/src/build_deck.py#L55-L66" code={`    lineage, skipped = [], []
+    for item in content["items"]:
+        if item["mlr_status"] != "Approved":     # governance gate
+            skipped.append({"title": item["title"], "reason": f"MLR status {item['mlr_status']}"})
+            continue
+        _add_claim_slide(prs, item)
+        lineage.append({
+            "slide_title": item["title"],
+            "content_id": item["content_id"],
+            "mlr_approval_id": item["mlr_approval_id"],
+            "source_ref": item["source_ref"],
+        })`} />
+
+</S>
+
+<S n="06" t="Modeling / AI approach">
+
+- **Constrain, don't filter.** The generator is populated only from approved content, instead of generating freely and checking afterwards.
+- **Lineage is a graph.** Impact ("what changes if this claim is withdrawn?") is a descendants query; provenance ("where did this sentence come from?") is an ancestors query:
+
+<Code lang="python" title="commercial-metadata-catalog/src/catalog.py" href="https://github.com/kavya2693/commercial-metadata-catalog/blob/main/src/catalog.py#L31-L48" code={`def build_lineage(edges):
+    g = nx.DiGraph()
+    for e in edges:
+        g.add_edge(e["from"], e["to"], via=e["via"])
+    return g
+
+
+def impact(g, node):
+    return sorted(nx.descendants(g, node)) if node in g else []
+
+
+def provenance(g, node):
+    return sorted(nx.ancestors(g, node)) if node in g else []
+
+
+def sources_reached(g, node):
+    """Upstream nodes that are themselves sources (no upstream of their own)."""
+    return [n for n in nx.ancestors(g, node) if g.in_degree(n) == 0] if node in g else []`} />
+
+</S>
+
+<S n="07" t="Evaluation">
+
+- The governance checks run like tests: every dataset owned and classified, every KPI traced to a source, every generated slide traced through key message → MLR approval → content → source asset.
+- In the public generator demo, three approved claims render and the one claim still in review is refused — a mechanism check, not a production benchmark.
+- Withdrawing an approved claim lists exactly which assets it touches.
+
+</S>
+
+<S n="08" t="Production considerations">
+
+- Served through an API (FastAPI in the public rebuild) so every downstream tool inherits the same gate.
+- Lineage is written into the artifact itself (speaker notes) and a sidecar record, so it survives when a file is emailed out of the system.
+
+</S>
+
+<S n="09" t="Results">
+
+- Per-market dossier adaptation: **~3 months → ~1 week.**
+- Rolled across **~25 markets**, including **6 low- and middle-income countries** that had previously waited longest.
+- Slide-level lineage from generated output to source evidence and approval.
+
+</S>
+
+<S n="10" t="Tradeoffs / lessons">
+
+- **Lineage at the slide level, not the document level.** Document-level lineage cannot answer the question an auditor actually asks.
+- **Generation is only as fast as review.** Carrying the approval ID with every piece of content is what lets a reviewer check a draft instead of re-researching it.
+
+<Note>In regulated GenAI, lineage is the product. Speed only becomes usable once every sentence can be traced.</Note>
+
+</S>

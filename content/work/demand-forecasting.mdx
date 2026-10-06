@@ -1,0 +1,119 @@
+<S n="01" t="Problem">
+
+A large retail group replenishes **4,000+ SKUs across 33 stores** every day. Too little stock loses the sale; too much ties up cash and spoils. One model per SKU-store series means more than 130,000 models to train and monitor, and naive forecasts ("same day last week") ignore promotions, seasonality and the way one product steals demand from another.
+
+</S>
+
+<S n="02" t="Context">
+
+- **Users:** replenishment, production-planning and inventory-allocation teams, and the downstream planning applications that call the forecasts.
+- **Requirement:** a forecast per SKU × store, with a confidence indicator and model metadata, available through an API.
+- **Not GenAI.** This is classical applied ML, where a number has to be right every morning.
+
+</S>
+
+<S n="03" t="Data">
+
+Daily sales history per SKU × store, promotions, calendar effects, product and store attributes. For the research rebuild, a product/store graph adds substitutes, complements, store similarity and proximity.
+
+The rebuild runs on **simulated data** at demo scale — 6 stores × 200 SKUs × 730 days — with a time-based holdout and a 7-day embargo between train and test:
+
+| Split | Rows |
+|---|---|
+| Train | 777,600 |
+| Validation | 8,400 |
+| Test | 55,200 |
+
+</S>
+
+<S n="04" t="Architecture">
+
+<Flow label="From history to a served forecast" flow={[
+  [{ t: "Sales" }, { t: "Promotions" }, { t: "Calendar" }, { t: "Product / store graph" }],
+  { t: "Feature pipeline", d: "lags · rolling mean / std · hierarchy · item age" },
+  { t: "Global LightGBM", d: "one model across all series · p90 quantile head" },
+  { t: "Validation gate", d: "time holdout vs seasonal-naive" },
+  { t: "MLflow registry", d: "promote only on pass" },
+  { t: "FastAPI", d: "forecast · confidence · model metadata" },
+  { t: "Planning applications" },
+]} />
+
+Retraining, validation, experiment tracking and promotion are scheduled with Airflow, tracked in MLflow and packaged in Docker.
+
+</S>
+
+<S n="05" t="What I built">
+
+- Global and hierarchical forecasting models in Python, SQL, scikit-learn and LightGBM / XGBoost.
+- FastAPI endpoints returning SKU-store forecasts, confidence indicators and model metadata.
+- The automated ingest → retrain → validate → promote workflow.
+- A research rebuild that tests a specific hypothesis: do graph features help, especially for new products?
+
+<Illustrative>Illustrative · feature construction pattern, synthetic column names</Illustrative>
+
+```python
+def add_features(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.sort_values(["store", "sku", "date"])
+    g = df.groupby(["store", "sku"])["units"]
+    for lag in (1, 7, 14, 28):
+        df[f"lag_{lag}"] = g.shift(lag)                 # only past values: no leakage
+    for w in (7, 28):
+        past = g.shift(1)
+        df[f"rmean_{w}"] = past.groupby([df.store, df.sku]).transform(lambda s: s.rolling(w).mean())
+        df[f"rstd_{w}"] = past.groupby([df.store, df.sku]).transform(lambda s: s.rolling(w).std())
+    df["item_age"] = (df["date"] - df.groupby("sku")["date"].transform("min")).dt.days
+    return df
+```
+
+</S>
+
+<S n="06" t="Modeling / AI approach">
+
+- **One global model** instead of thousands of local ones: series share statistical strength, and new SKUs borrow from similar ones.
+- **A p90 quantile head** alongside the point forecast, because safety stock is a quantile question, not a mean question.
+- **A three-arm ablation** for the graph hypothesis: seasonal-naive, LightGBM without graph features, LightGBM with them. Cold-start subsets by item age isolate where graph context should help most.
+
+</S>
+
+<S n="07" t="Evaluation">
+
+Research rebuild, simulated data, test set:
+
+| Arm | Test WMAPE |
+|---|---|
+| Seasonal-naive | 0.2273 |
+| LightGBM (no graph) | 0.1838 |
+| LightGBM + graph features | +0.4% better than without |
+
+- On ultra-cold items (under 14 days old, n = 1,662) the graph lift rises to **+2.1%**.
+- Graph features account for **0.3%** of total LightGBM gain; rolling statistics and item age dominate.
+- The p90 head covers **88.5%** of outcomes against a 90% target — slightly under-covering, which matters for stock-outs.
+
+</S>
+
+<S n="08" t="Production considerations">
+
+- Forecasts are served with model metadata so a planner can see which model version produced a number.
+- Promotion is gated: a retrained model that does not beat the validation bar is not promoted.
+- Under-coverage of the p90 head is the number to watch in production — it translates directly into stock-outs.
+
+</S>
+
+<S n="09" t="Results">
+
+- Production forecasting across 4,000+ SKUs × 33 stores, served by API and refreshed automatically.
+- In the rebuild: **~19% lower WMAPE than seasonal-naive** (0.2273 → 0.1838).
+- Graph features: a small, honest effect — +0.4% overall, +2.1% for brand-new items.
+- Earlier, at Noon: daily delivery-demand MAPE cut from **25% to 18%** across e-commerce, grocery and quick-commerce.
+
+</S>
+
+<S n="10" t="Tradeoffs / lessons">
+
+- **The boring features win.** Rolling means, volatility and item age carry most of the signal.
+- **Report the small lift.** +0.4% is a real result; dressing it up would make every other number on this page less credible.
+- **Graph context earns its place at the edges** — new products with no history — not in the average.
+
+<Note>The model is the easy part. The feature pipeline, the gate and the coverage of the p90 are where forecasts succeed or fail.</Note>
+
+</S>

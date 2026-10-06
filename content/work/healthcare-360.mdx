@@ -1,0 +1,159 @@
+<S n="01" t="Problem">
+
+Commercial teams at a large pharmaceutical company needed to answer simple-sounding questions — *which physicians in this territory engaged with this content, and what happened next?* — and could not. Customer data lived in **more than twenty systems**. Every question became a bespoke SQL request to an analytics team, took days, and two teams asking the same question could get two different answers.
+
+</S>
+
+<S n="02" t="Context">
+
+- **Users:** brand, field, market-access and analytics teams — people who act on an answer, not people who write queries.
+- **Constraint:** a regulated environment. An answer nobody can trace to a source is not usable, however fast it arrives.
+- **Baseline:** the recurring ad-hoc requests analysts were answering by hand. That is what the system had to replace, and it is what success was measured against.
+
+</S>
+
+<S n="03" t="Data">
+
+Structured and unstructured data from CRM, offline engagement, web analytics and other commercial systems — 20+ sources. The hard part is identity: the same physician or hospital carries a different identifier in every system, with typos, missing national IDs, and organisations that change names.
+
+| Source type | Typical problem |
+|---|---|
+| CRM | the most trusted record, but incomplete for digital channels |
+| Offline engagement | free-text names, no national identifier |
+| Web analytics | email or cookie only, no clinical attributes |
+
+</S>
+
+<S n="04" t="Architecture">
+
+<Flow label="Ingestion → governed answer" flow={[
+  [{ t: "CRM" }, { t: "Engagement" }, { t: "Web" }, { t: "Offline" }],
+  { t: "Entity resolution", d: "block → match → cluster → survivorship" },
+  { t: "Mapping to ontology", d: "RDF / OWL classes and properties" },
+  { t: "SHACL gate", d: "non-conforming records rejected with a reason" },
+  { t: "Knowledge graph", d: "AWS Neptune" },
+  { t: "Graph-RAG service", d: "secure API · access control per use case" },
+]} />
+
+And the retrieval path for a single question — every step is inspectable, which is what makes the answer defensible:
+
+<Flow label="One question, end to end" flow={[
+  { t: "Question", d: "“Which cardiologists in the North territory saw the new dosing content?”" },
+  { t: "Entity detection", d: "specialty · territory · content asset" },
+  { t: "Hybrid retrieval", d: "ontology terms + text match + embeddings" },
+  { t: "Graph traversal", d: "governed query over defined relationships" },
+  { t: "Context assembly", d: "rows + source record IDs" },
+  { t: "LLM answer", d: "constrained to the assembled context" },
+  { t: "Citation check", d: "every claim maps to a returned record" },
+]} />
+
+</S>
+
+<S n="05" t="What I built">
+
+- The semantic model: the classes, relationships and constraints that define a commercial customer.
+- Entity-resolution pipelines across CRM, offline engagement and web analytics — deterministic rules, fuzzy and embedding similarity, confidence scores, survivorship.
+- The Graph-RAG assistant, from use-case definition through retrieval-quality validation, exposed through secure API and model-serving endpoints.
+- Access and governance controls, and the adoption and scaling recommendation to leadership.
+
+The public companion repository reconstructs the ingestion gate on synthetic data. This is the shape that keeps a malformed physician record out of the graph:
+
+<Code lang="turtle" title="customer360-ontology-graph/ontology/shapes.ttl" href="https://github.com/kavya2693/customer360-ontology-graph/blob/main/ontology/shapes.ttl#L5-L18" code={`# An HCP must have exactly one specialty, a segment from the controlled list, and
+# at least one affiliation — the conditions that keep the graph queryable.
+:HCPShape a sh:NodeShape ;
+    sh:targetClass :HCP ;
+    sh:property [ sh:path :specialty ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+    sh:property [ sh:path :segment ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:in ( "EarlyAdopter" "GrowthPotential" "Established" ) ] ;
+    sh:property [ sh:path :affiliatedWith ; sh:minCount 1 ] .
+
+# Content is only servable when its MLR status is a recognised value.
+:ContentShape a sh:NodeShape ;
+    sh:targetClass :ContentModule ;
+    sh:property [ sh:path :mlrStatus ; sh:minCount 1 ;
+                  sh:in ( "Approved" "InReview" "Expired" ) ] .`} />
+
+</S>
+
+<S n="06" t="Modeling / AI approach">
+
+**Entity resolution decides the ceiling of everything downstream.** Deterministic identifiers win when both records have one; otherwise a surname match is never enough on its own — a first name and one corroborating field must agree. From the public rebuild:
+
+<Code lang="python" title="mdm-entity-resolution/src/resolve.py" href="https://github.com/kavya2693/mdm-entity-resolution/blob/main/src/resolve.py#L63-L81" code={`def is_match(a, b):
+    # deterministic identifiers decide when both records carry one
+    if a["npi"] and b["npi"]:
+        return a["npi"] == b["npi"]                 # equal -> match; differ -> not
+    if a["email"] and b["email"]:
+        return a["email"] == b["email"]             # a shared email is a strong match
+    # probabilistic: surname must agree, BOTH first names must be present and agree
+    # (surname alone is never enough), and one more field must corroborate.
+    if fuzz.ratio(a["last"], b["last"]) < 88:
+        return False
+    fa, fb = a["first"], b["first"]
+    if not fa or not fb:
+        return False
+    first_ok = (fa == fb or (fa[0] == fb[0] and (len(fa) == 1 or len(fb) == 1))
+                or fuzz.ratio(fa, fb) >= 78)
+    if not first_ok:
+        return False
+    return ((a["city"] and a["city"] == b["city"])
+            or (a["org"] and fuzz.token_sort_ratio(a["org"], b["org"]) >= 80))`} />
+
+**The language model never queries raw tables.** It is given the ontology's vocabulary, produces a query over defined relationships, and writes its answer only from rows the graph returned. A synthetic example of the kind of query it produces:
+
+<Illustrative />
+
+```sparql
+PREFIX c: <https://example.org/commercial#>
+SELECT ?hcp ?name ?engagedOn ?source
+WHERE {
+  ?hcp a c:HCP ;
+       c:specialty "Cardiology" ;
+       c:inTerritory c:North ;
+       c:name ?name .
+  ?e a c:Engagement ;
+     c:withHCP ?hcp ;
+     c:usedContent c:DosingDeck_v3 ;
+     c:date ?engagedOn ;
+     c:sourceRecord ?source .          # carried through to the citation
+}
+ORDER BY DESC(?engagedOn)
+LIMIT 50
+```
+
+</S>
+
+<S n="07" t="Evaluation">
+
+- **Data quality:** SHACL shapes run on every load; a record that fails is rejected with the violated constraint, not silently dropped.
+- **Entity resolution:** scored pairwise against labelled ground truth. The public rebuild reaches precision ~0.93, recall ~0.84, F1 ~0.88 on 220 synthetic entities — precision deliberately favoured, because merging two real physicians is the worse error.
+- **Retrieval quality:** validated with business and analytics stakeholders on their real recurring questions before access widened.
+- **Citations:** an answer whose claims do not map to returned records is treated as a failure, regardless of how fluent it is.
+
+</S>
+
+<S n="08" t="Production considerations">
+
+- Access controls defined per use case before rollout, not after.
+- Served through secure APIs and model-serving endpoints so other tools inherit the same governance.
+- The ontology evolves as sources are added; the SHACL gate is what keeps existing questions answerable when it does.
+
+</S>
+
+<S n="09" t="Results">
+
+- **~80% of recurring ad-hoc data requests** replaced by the assistant.
+- One governed definition of a commercial customer across **20+ systems**.
+- The graph became the foundation of a next-best-action design — eligibility as a deterministic graph rule, relevance as a ranker. [Read the architecture →](/hcp-nba-architecture.html)
+
+</S>
+
+<S n="10" t="Tradeoffs / lessons">
+
+- **Ontology first is slower in week one and faster by month three.** Every later question reused the same definitions instead of re-arguing them.
+- **Precision over recall in entity resolution.** A missed merge costs a duplicate row; a wrong merge sends one doctor's history to another.
+- **Citations are a product feature.** The adoption conversation changed when a brand lead could click through to the source record.
+
+<Note>Most of the work in Graph-RAG is not the language model. It is agreeing what a “customer” is across twenty systems, and making that agreement enforceable.</Note>
+
+</S>

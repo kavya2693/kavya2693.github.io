@@ -1,0 +1,126 @@
+<S n="01" t="Problem">
+
+Every internal business application starts the same way: someone re-models the domain by hand — entities, database schema, API, screens. By the third iteration the database, the API and the interface disagree about what an "order" is, and every change has to be made three times.
+
+</S>
+
+<S n="02" t="Context">
+
+- **Users:** product and business teams with a requirement in whatever form they already have — a paragraph, a slide deck, a screenshot of an existing tool, a Figma file.
+- **Constraint:** generated software has to be checkable. An app that demos well and is broken underneath is worse than no app.
+- **Bar:** a deployable full-stack application, not a mock-up — schema, REST API and a working UI that agree with each other.
+
+</S>
+
+<S n="03" t="Data">
+
+The input is the data. Five input types — written requirements, free-form prompts, presentations, screenshots and Figma designs — which makes the first stage a **multimodal extraction** problem: a screenshot of a table implies entities, fields and relationships that a vision-language model has to recover.
+
+The output of extraction is not code. It is a **domain model**: entities, attributes, types, relationships, constraints and screens.
+
+</S>
+
+<S n="04" t="Architecture">
+
+<Flow label="One graph drives every agent" flow={[
+  [{ t: "Requirements" }, { t: "Prompt" }, { t: "Deck" }, { t: "Screenshot" }, { t: "Figma" }],
+  { t: "Planner / extraction agent", d: "LLM + VLM → domain model" },
+  { t: "Knowledge graph IR", d: "entities · relations · constraints · screens" },
+  [{ t: "Schema agent" }, { t: "API agent" }, { t: "UI agent" }],
+  { t: "Validators", d: "25 checks · failing stage repaired" },
+  { t: "Human approval", d: "governance gate before deploy" },
+  { t: "Deployable application" },
+]} />
+
+The decision that makes it work: **agents never talk to each other directly.** Each reads from and writes to the shared graph. Schema, API and UI agents generate from the same model, so they cannot drift apart.
+
+</S>
+
+<S n="05" t="What I built">
+
+- The platform architecture and the schema-first domain model at Dalfin.AI.
+- Multi-agent code generation with automated validation, REST API integration and human-in-the-loop governance.
+- **GraphForge**, a graph-native rebuild where the intermediate representation is a temporal knowledge graph: each pipeline stage writes an episode, so the history of every design decision is queryable.
+
+A synthetic slice of the intermediate representation the agents share:
+
+<Illustrative />
+
+```json
+{
+  "entities": [
+    { "name": "Order", "attrs": [
+      { "name": "id", "type": "uuid", "pk": true },
+      { "name": "placed_at", "type": "timestamp", "required": true },
+      { "name": "status", "type": "enum", "values": ["new", "paid", "shipped"] }
+    ]},
+    { "name": "StockLedger", "attrs": [
+      { "name": "sku", "type": "string", "required": true },
+      { "name": "delta", "type": "int", "required": true }
+    ]}
+  ],
+  "relations": [{ "from": "Order", "to": "Customer", "kind": "many_to_one" }],
+  "screens": [{ "name": "Orders", "entity": "Order", "views": ["table", "form", "chart"] }]
+}
+```
+
+</S>
+
+<S n="06" t="Modeling / AI approach">
+
+- **Extraction** uses a language model for any domain described to it, with offline domain templates (restaurant, retail, hospital, generic) as a fallback when no model is available.
+- **Generation** reads a JSON snapshot of the graph for that run, never live queries — so a run is reproducible and testable.
+- **Repair is targeted.** A failing validator names the entity and rule; only that stage is regenerated.
+- **Edits are incremental.** Changing one entity re-emits only what touched it, instead of regenerating the whole application.
+
+<Illustrative />
+
+```python
+def generate(run):
+    ir = run.graph_snapshot()              # frozen JSON mirror of the graph
+    for stage in (schema_agent, api_agent, ui_agent):
+        artifact = stage(ir)
+        for attempt in range(MAX_REPAIRS):
+            failures = [v for v in VALIDATORS if not v.check(ir, artifact)]
+            if not failures:
+                break
+            artifact = stage.repair(ir, artifact, failures)   # rule + entity named
+        run.record(stage.name, artifact, failures)            # episode in the graph
+    return run.await_human_approval()
+```
+
+</S>
+
+<S n="07" t="Evaluation">
+
+Every generated application runs through **25 automated validators**. Four reference domains — quick-service restaurant, hospital, retail and warehouse — pass. Two of them (retail and warehouse) passed only after automatic self-repair, which added a missing stock-ledger entity the validators required.
+
+That second fact matters more than the first: it shows the validators catch real gaps that extraction misses.
+
+</S>
+
+<S n="08" t="Production considerations">
+
+- **Latency is a product decision.** Full UI generation takes minutes, so the pipeline returns a deterministic data-table preview first and generates the full React application on demand.
+- **Human-in-the-loop by default.** Generated software is a draft until someone approves it.
+- **Graceful degradation.** If the graph database is down, the run continues from its JSON mirror.
+
+</S>
+
+<S n="09" t="Results">
+
+- A working generation platform at Dalfin.AI that accepts requirements, prompts, decks, screenshots and Figma designs.
+- A graph-native rebuild that generates a validated application for any described domain, with full design history.
+- 4 of 4 reference domains passing all 25 validators.
+
+</S>
+
+<S n="10" t="Tradeoffs / lessons">
+
+- **A shared model beats agent-to-agent chat.** When every agent reads the same graph, a whole class of disagreement between layers cannot happen.
+- **Validators are the real product.** The model's output quality varies; the gate does not.
+- **Fast preview, slow perfection.** Users tolerate minutes for the final app if they see something correct in seconds.
+
+<Note>Agents don't need more freedom. They need a shared model they cannot disagree about.</Note>
+
+</S>

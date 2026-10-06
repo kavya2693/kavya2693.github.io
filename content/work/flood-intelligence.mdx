@@ -1,0 +1,110 @@
+<S n="01" t="Problem">
+
+Cities need to know where water will collect — and what to do about it — before the storm, not after. The natural first model is a regression: **rainfall in, flooded area out**, fitted across the world's worst-affected regions and applied to Gulf cities. That requires both numbers, sourced, for the same flood.
+
+</S>
+
+<S n="02" t="Context">
+
+- **Scope:** twelve flood regions — ten global hotspots and two in the UAE — over 2000–2025.
+- **Users the system is ultimately for:** city operators who decide where pumps, tankers and road closures go.
+- **Standard:** every figure must be auditable by a third party. A risk model built on numbers nobody can trace is not something an authority can act on.
+
+</S>
+
+<S n="03" t="Data">
+
+48 documented flood events. For each, the dataset needs peak 24-hour rainfall and inundated extent, each with a resolvable source, an evidence tier and a measurement method. Dam- and levee-failure events are excluded (rainfall doesn't drive them), as are extents reported for whole administrative areas.
+
+| Field | Events with a sourced value |
+|---|---|
+| Peak 24 h rainfall | 12 of 48 (25%) |
+| Inundated extent | 14 of 48 (29%) |
+| **Both** | **2 of 48 (4.2%)** |
+
+</S>
+
+<S n="04" t="Architecture">
+
+The shipped component is the provenance-enforced dataset. The diagram is the target architecture for an urban flood twin that this dataset is the foundation for — the risk-model stage is explicitly blocked until paired data exist.
+
+<Flow label="Target architecture · urban flood twin" flow={[
+  [{ t: "Rainfall" }, { t: "Terrain (DEM)" }, { t: "Roads" }, { t: "Buildings" }, { t: "Land use" }],
+  { t: "Feature layer", d: "gridded · drainage network · imperviousness" },
+  { t: "Flood risk model", d: "blocked: needs paired rainfall + extent" },
+  { t: "Hotspots", d: "ranked cells · depth · drawdown time" },
+  { t: "Ontology / agent layer", d: "assets, owners, interventions, scenarios" },
+  { t: "Investigation + actions", d: "compare scenarios · route pumps and crews" },
+]} />
+
+</S>
+
+<S n="05" t="What I built">
+
+Everything in the public repository: research design, the validator, the dataset, the coverage audit, the statistics and the write-up. The validator was written — and tested against deliberately broken inputs — **before any data existed**:
+
+<Code lang="python" title="global-flood-hotspots/src/floodhotspots/validate.py" href="https://github.com/kavya2693/global-flood-hotspots/blob/main/src/floodhotspots/validate.py#L66-L83" code={`def _check_provenance(df: pd.DataFrame, figures, key: str, table: str) -> list[Problem]:
+    """A figure is admissible only with a resolvable URL, a tier, and a method
+    where the schema demands one. This is the rule the whole project rests on."""
+    problems: list[Problem] = []
+    for _, row in df.iterrows():
+        rid = str(row.get(key, "?"))
+        for fig in figures:
+            if fig.value not in df.columns or not _present(row.get(fig.value)):
+                continue
+            url = row.get(fig.source_url)
+            if not _present(url):
+                problems.append(
+                    Problem(table, rid, fig.value, "no_source", "figure present, source URL empty")
+                )
+            elif not URL_RE.match(str(url).strip()):
+                problems.append(
+                    Problem(table, rid, fig.source_url, "bad_source", f"not a URL: {url!r}")
+                )`} />
+
+</S>
+
+<S n="06" t="Modeling / AI approach">
+
+The model that was planned is a leave-one-site-out regression of inundated extent on rainfall. It is implemented, and it **refuses to fit** when it has too few paired observations — raising `NotEstimable` instead of returning a confident line through two points.
+
+With the regression ruled out, the analysis turned to *why* the data are missing: a coverage audit by site and by flood type, and a rank correlation between rainfall coverage and extent coverage across sites.
+
+</S>
+
+<S n="07" t="Evaluation">
+
+- **57 tests**, including the validator against broken fixtures.
+- Rainfall coverage and extent coverage are **anti-correlated across sites: Spearman ρ = −0.76, p = 0.0042, n = 12.**
+- The mechanism: met agencies gauge rain where cities are; satellite mapping activates where floods are wide, flat and rural. Urban sites (Mumbai, Jakarta) have rainfall and no extent; riverine sites (Lokoja, the Yangtze) have the reverse. The pattern holds within a site too.
+- Only 3 of the 12 sourced rainfall figures are top-tier evidence.
+
+</S>
+
+<S n="08" t="Production considerations">
+
+For an urban twin in a flat Gulf city, two things decide feasibility before any model does:
+
+- **Elevation data.** Across a test area, global DEMs report relief several times larger than the true relief of the city — the error is as large as the hydraulic signal. A survey-grade DEM is a prerequisite, not an upgrade.
+- **The handover format.** Building to the city authority's own stormwater design standard makes handover a format match rather than a migration.
+- **The decision is drawdown.** Operators care when water clears and what speeds it up — not just peak depth — so the twin must be time-resolved.
+
+</S>
+
+<S n="09" t="Results">
+
+- A public, provenance-validated dataset of 48 events across 12 regions.
+- A finding that changes what to build: **the bottleneck in flood ML is paired measurement, not model choice.**
+- The only published inundated area for any UAE event is **23.8 km²** (Dubai, April 2024). Nothing is published for any Fujairah event.
+
+</S>
+
+<S n="10" t="Tradeoffs / lessons">
+
+- **Let the data veto the plan.** A regression on two points would have produced a chart and a false conclusion.
+- **Write the validator before the dataset.** It turned "I think this is sourced" into a test that fails.
+- **Next step:** reproduce the Dubai 23.8 km² figure independently from Sentinel-1 radar — the first paired observation the Gulf has.
+
+<Note>A well-evidenced negative result is worth more than a regression on two points.</Note>
+
+</S>
