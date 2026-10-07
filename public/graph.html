@@ -362,9 +362,9 @@
           <div class="top"><h3>Local NL→Cypher</h3><span class="pill">Prototype</span></div>
           <p class="tag">On-prem · Fine-tuning</p>
           <p><b>Problem.</b> Analysts want to ask a graph questions in plain English, but the data is sensitive and can't be sent to a hosted model.</p>
-          <p><b>Graph decision.</b> An <b>ontology-grounded NL→Cypher</b> pipeline running fully offline (Neo4j + Ollama), with a <b>LoRA-fine-tuned Qwen2.5</b> for the translation, validated against a held-out query set.</p>
-          <ul class="stack"><li>NL2Cypher</li><li>ontology-grounded</li><li>LoRA (MLX)</li><li>Neo4j</li></ul>
-          <span class="case-fig"><img src="assets/proj-nl2cypher.png" alt="On-prem natural-language question through a LoRA-tuned Qwen2.5 to Cypher over Neo4j, returning an answer"/></span>
+          <p><b>Graph decision.</b> An <b>ontology-grounded NL→Cypher</b> pipeline running fully offline (Neo4j + Ollama) with <b>qwen2.5-coder 7B on CPU</b>, made reliable by non-model guardrails: few-shot retrieval, entity linking, schema pruning and a deterministic relationship-direction corrector.</p>
+          <ul class="stack"><li>NL2Cypher</li><li>ontology-grounded</li><li>local LLM</li><li>Neo4j</li></ul>
+          <span class="case-fig"><img src="assets/proj-nl2cypher.png" alt="On-prem natural-language question through qwen2.5-coder 7B on CPU to Cypher over Neo4j, returning an answer"/></span>
           <span class="link">Prototype · walkthrough on request</span>
         </article>
 
@@ -372,7 +372,7 @@
           <div class="top"><h3>Graph-augmented forecasting</h3><span class="pill">Prototype</span></div>
           <p class="tag">Retail · Graph ML</p>
           <p><b>Problem.</b> Store × SKU demand forecasts ignore how products and stores relate — cannibalization, substitution, and shared demand shocks.</p>
-          <p><b>Graph decision.</b> A <b>graph encoder</b> over cross-product / cross-store relationships feeds <b>node embeddings</b> into a global LightGBM across <b>4,000+ SKUs × 33 stores</b>. ML beats naive by ~23%, with an honest read on where the graph lift stays small.</p>
+          <p><b>Graph decision.</b> A <b>graph encoder</b> over cross-product / cross-store relationships feeds <b>node embeddings</b> into a global LightGBM across <b>4,000+ SKUs × 33 stores</b>. In a simulated rebuild LightGBM cuts WMAPE from 0.227 to 0.184 vs seasonal-naive; graph features add only +0.4% overall and +2.1% on brand-new items.</p>
           <ul class="stack"><li>graph encoder</li><li>node embeddings</li><li>LightGBM</li><li>spatiotemporal</li></ul>
           <span class="case-fig"><img src="assets/proj-forecasting.png" alt="Product and store graph through a graph encoder to node embeddings, combined with tabular features into LightGBM forecasts"/></span>
           <span class="link">Prototype · walkthrough on request</span>
