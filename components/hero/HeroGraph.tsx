@@ -97,8 +97,8 @@ export function HeroGraph() {
       <svg viewBox="0 0 600 560" className="h-auto w-full overflow-visible" role="img" aria-label="System graph: knowledge graph, Graph-RAG, agents, evaluation, entity resolution, forecasting and geospatial AI, and how they connect">
         <defs>
           <radialGradient id="hg-glow">
-            <stop offset="0%" stopColor="#72e6c1" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#72e6c1" stopOpacity="0" />
+            <stop offset="0%" stopColor="#08795d" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#08795d" stopOpacity="0" />
           </radialGradient>
         </defs>
         <circle cx={pos.kg.x} cy={pos.kg.y} r="150" fill="url(#hg-glow)" />
@@ -109,7 +109,7 @@ export function HeroGraph() {
             <line
               key={a + b}
               x1={pos[a].x} y1={pos[a].y} x2={pos[b].x} y2={pos[b].y}
-              stroke={on ? "#72e6c1" : "#2a3441"}
+              stroke={on ? "#08795d" : "#cfd6dd"}
               strokeOpacity={neighbors && !on ? 0.35 : 1}
               strokeWidth={on ? 1.4 : 1}
             />
@@ -119,7 +119,7 @@ export function HeroGraph() {
         {!reduce &&
           PULSES.filter(([a, b]) => nodes.some((n) => n.id === a) && nodes.some((n) => n.id === b)).map(([a, b], i) => {
             const p = ((t * 0.18 + i * 0.27) % 1 + 1) % 1;
-            return <circle key={a + b} cx={pos[a].x + (pos[b].x - pos[a].x) * p} cy={pos[a].y + (pos[b].y - pos[a].y) * p} r="2" fill="#72e6c1" opacity={Math.sin(p * Math.PI) * 0.9} />;
+            return <circle key={a + b} cx={pos[a].x + (pos[b].x - pos[a].x) * p} cy={pos[a].y + (pos[b].y - pos[a].y) * p} r="2" fill="#08795d" opacity={Math.sin(p * Math.PI) * 0.9} />;
           })}
 
         {nodes.map((n) => {
@@ -147,9 +147,9 @@ export function HeroGraph() {
               onKeyDown={(e) => e.key === "Enter" && router.push(`/graph/?focus=${n.go}`)}
             >
               <circle r="20" fill="transparent" />
-              {(n.primary || isH) && <circle r={r + 6} fill="none" stroke="#72e6c1" strokeOpacity={isH ? 0.5 : 0.18} />}
-              <circle r={r} fill={n.primary || isH ? "#72e6c1" : "#10151c"} stroke={n.primary || isH ? "#72e6c1" : "#949eac"} strokeWidth="1.3" />
-              <text x={lx} y={ly} textAnchor={anchor} className="select-none font-mono" fontSize={fs} fill={isH || n.primary ? "#f3f5f7" : "#949eac"}>
+              {(n.primary || isH) && <circle r={r + 6} fill="none" stroke="#08795d" strokeOpacity={isH ? 0.5 : 0.18} />}
+              <circle r={r} fill={n.primary || isH ? "#08795d" : "#ffffff"} stroke={n.primary || isH ? "#08795d" : "#56616e"} strokeWidth="1.3" />
+              <text x={lx} y={ly} textAnchor={anchor} className="select-none font-mono" fontSize={fs} fill={isH || n.primary ? "#0d1117" : "#56616e"}>
                 {compact ? COMPACT[n.id] : n.label}
               </text>
             </g>
@@ -159,7 +159,7 @@ export function HeroGraph() {
 
       <div
         aria-hidden
-        className={`pointer-events-none absolute left-0 right-0 bottom-0 mx-auto max-w-sm rounded-lg border border-line-2 bg-surface/95 px-3.5 py-2.5 text-[0.8rem] text-ink-2 shadow-[0_14px_40px_rgb(0_0_0/0.45)] transition-all duration-200 ${
+        className={`pointer-events-none absolute left-0 right-0 bottom-0 mx-auto max-w-sm rounded-lg border border-line-2 bg-surface/95 px-3.5 py-2.5 text-[0.8rem] text-ink-2 shadow-[0_14px_40px_rgb(13_17_23/0.12)] transition-all duration-200 ${
           hovered ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
         }`}
       >

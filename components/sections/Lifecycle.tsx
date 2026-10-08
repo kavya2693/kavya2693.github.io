@@ -15,7 +15,7 @@ export function Lifecycle({ num = "05" }: { num?: string }) {
         <Reveal>
           <ol className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
             {LIFECYCLE.map((s, i) => (
-              <li key={s.name} className={`flex flex-col gap-3 bg-surface p-6 ${s.name === "Evaluate" ? "bg-[linear-gradient(180deg,rgb(114_230_193/0.07),var(--color-surface))]" : ""}`}>
+              <li key={s.name} className={`flex flex-col gap-3 bg-surface p-6 ${s.name === "Evaluate" ? "bg-[linear-gradient(180deg,rgb(8_121_93/0.07),var(--color-surface))]" : ""}`}>
                 <span className="font-mono text-[0.6875rem] tracking-[0.1em] text-dim">
                   {String(i + 1).padStart(2, "0")} {i < LIFECYCLE.length - 1 ? "→" : "↺"}
                 </span>

@@ -42,9 +42,9 @@ function BarPanel({ title, field, note }: { title: string; field: "conf" | "acc"
           return (
             <li key={a.arm} className="group relative grid grid-cols-[84px_minmax(0,1fr)_48px] items-center gap-3">
               <span className="font-mono text-[0.72rem] text-mute">{a.arm}</span>
-              <span className="relative h-[14px] rounded-[3px] bg-white/[0.03]">
+              <span className="relative h-[14px] rounded-[3px] bg-black/[0.05]">
                 <span
-                  className={`absolute inset-y-0 left-0 rounded-r-[4px] ${a.loop ? "bg-accent" : "bg-[#5b6675]"} transition-opacity group-hover:opacity-80`}
+                  className={`absolute inset-y-0 left-0 rounded-r-[4px] ${a.loop ? "bg-accent" : "bg-[#aab3bd]"} transition-opacity group-hover:opacity-80`}
                   style={{ width: `${Math.max(v, 0.6)}%` }}
                 />
               </span>

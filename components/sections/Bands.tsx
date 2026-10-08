@@ -10,7 +10,7 @@ export function GraphBand() {
   return (
     <section className="border-t border-line py-20">
       <Container>
-        <div className="grid items-center gap-10 rounded-2xl border border-line bg-[radial-gradient(600px_300px_at_85%_50%,rgb(114_230_193/0.08),transparent_70%)] p-7 sm:p-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="grid items-center gap-10 rounded-2xl border border-line bg-[radial-gradient(600px_300px_at_85%_50%,rgb(8_121_93/0.08),transparent_70%)] p-7 sm:p-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div>
             <Eyebrow className="mb-5">The graph</Eyebrow>
             <h2 className="text-[clamp(1.6rem,3vw,2.2rem)] font-semibold leading-tight tracking-[-0.03em]">

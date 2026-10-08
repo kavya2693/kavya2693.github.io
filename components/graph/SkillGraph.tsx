@@ -160,7 +160,7 @@ export function SkillGraph({ initial = "me" }: { initial?: string }) {
             const on = near.has(s.id) && near.has(t.id) && (s.id === active || t.id === active);
             return (
               <line key={i} x1={s.x} y1={s.y} x2={t.x} y2={t.y}
-                stroke={on ? "#72e6c1" : "#2a3441"} strokeOpacity={on ? 0.9 : l.cross ? 0.45 : 0.85}
+                stroke={on ? "#08795d" : "#cfd6dd"} strokeOpacity={on ? 0.9 : l.cross ? 0.45 : 0.85}
                 strokeDasharray={l.cross ? "3 4" : undefined} strokeWidth={on ? 1.4 : 1} />
             );
           })}
@@ -185,18 +185,18 @@ export function SkillGraph({ initial = "me" }: { initial?: string }) {
                 }}
               >
                 <circle r={r + 14} fill="transparent" />
-                {isSel && <circle r={r + 7} fill="none" stroke="#72e6c1" strokeOpacity="0.55" />}
+                {isSel && <circle r={r + 7} fill="none" stroke="#08795d" strokeOpacity="0.55" />}
                 <circle
                   r={r}
-                  fill={n.kind === "core" ? "#72e6c1" : branchy ? "#10151c" : isSel ? "#72e6c1" : "#141a22"}
-                  stroke={n.kind === "core" || isSel || (branchy && near.has(n.id)) ? "#72e6c1" : "#6b7582"}
+                  fill={n.kind === "core" ? "#08795d" : branchy ? "#ffffff" : isSel ? "#08795d" : "#f2f5f7"}
+                  stroke={n.kind === "core" || isSel || (branchy && near.has(n.id)) ? "#08795d" : "#8a949f"}
                   strokeWidth={branchy ? 1.6 : 1.1}
                 />
                 {n.kind === "core" ? (
-                  <text y={compact ? 8 : 3.5} textAnchor="middle" fontSize={compact ? 24 : 11} fontWeight="600" fill="#03140e" className="font-mono">{compact ? "KJ" : n.label.toUpperCase()}</text>
+                  <text y={compact ? 8 : 3.5} textAnchor="middle" fontSize={compact ? 24 : 11} fontWeight="600" fill="#ffffff" className="font-mono">{compact ? "KJ" : n.label.toUpperCase()}</text>
                 ) : showLabel && (
                   <text {...labelPos(n, r, compact, k, branchy)} fontSize={(branchy ? 14 : 11.5) * (compact && !branchy ? 1.7 : k)} fontWeight={branchy ? 600 : 400}
-                    fill={isSel || (hover === n.id) ? "#f3f5f7" : branchy ? "#c3cad3" : "#949eac"}
+                    fill={isSel || (hover === n.id) ? "#0d1117" : branchy ? "#36404c" : "#56616e"}
                     className={branchy ? "" : "font-mono"}>
                     {n.label}
                   </text>

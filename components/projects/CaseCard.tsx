@@ -60,7 +60,7 @@ export function CaseCard({ c, index }: { c: Case; index: number }) {
         </div>
       </div>
 
-      <div className="border-t border-line bg-[radial-gradient(420px_260px_at_50%_0%,rgb(114_230_193/0.06),transparent_70%)] p-6 sm:p-8 lg:border-l lg:border-t-0">
+      <div className="border-t border-line bg-[radial-gradient(420px_260px_at_50%_0%,rgb(8_121_93/0.06),transparent_70%)] p-6 sm:p-8 lg:border-l lg:border-t-0">
         <FlowDiagram flow={c.flow} label={c.flowLabel} />
       </div>
     </article>

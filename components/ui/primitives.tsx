@@ -33,7 +33,7 @@ export function Chips({ items, className = "" }: { items: string[]; className?: 
   return (
     <ul className={`flex flex-wrap gap-1.5 ${className}`}>
       {items.map((s) => (
-        <li key={s} className="rounded-md border border-line bg-white/[0.015] px-2 py-0.5 font-mono text-[0.6875rem] text-mute">
+        <li key={s} className="rounded-md border border-line bg-black/[0.02] px-2 py-0.5 font-mono text-[0.6875rem] text-mute">
           {s}
         </li>
       ))}
@@ -49,7 +49,7 @@ export function ButtonLink({ href, children, variant = "ghost", className = "" }
     "group inline-flex min-h-11 items-center gap-2 rounded-full px-5 text-[0.92rem] font-medium transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-px";
   const look =
     variant === "primary"
-      ? "bg-accent text-accent-ink hover:shadow-[0_10px_34px_rgb(114_230_193/0.25)]"
+      ? "bg-accent text-accent-ink hover:shadow-[0_10px_34px_rgb(8_121_93/0.22)]"
       : "border border-line-2 text-ink hover:border-mute";
   const cls = `${base} ${look} ${className}`;
   const icon = isExternal(href) ? (
