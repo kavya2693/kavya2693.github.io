@@ -1,13 +1,12 @@
 import { SITE, CRED, FOCUS } from "@/lib/site";
 import { ButtonLink, Container, Eyebrow } from "@/components/ui/primitives";
-import { HeroGraph } from "./HeroGraph";
 
 export function Hero() {
   return (
     <section className="pb-16 pt-10 md:pb-20 md:pt-16">
       <Container>
-        <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-6">
-          <div>
+        <div>
+          <div className="max-w-[44rem]">
             <Eyebrow className="mb-7">AI systems · Knowledge · Agents · Applied ML</Eyebrow>
             <h1 className="text-[clamp(2.5rem,6vw,4.4rem)] font-semibold leading-[1.02] tracking-[-0.04em]">
               AI systems built for the <span className="font-serif font-normal italic tracking-[-0.02em] text-warm">real world.</span>
@@ -23,10 +22,6 @@ export function Hero() {
                 {SITE.linkedin && <a href={SITE.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-ink">LinkedIn ↗</a>}
               </div>
             </div>
-          </div>
-
-          <div className="relative mx-auto w-full max-w-[600px]">
-            <HeroGraph />
           </div>
         </div>
 
