@@ -1,6 +1,7 @@
 import { SITE, TIMELINE } from "@/lib/site";
 import { GRAPH_NODES } from "@/lib/graph";
 import { LAB } from "@/lib/lab";
+import { REPOS } from "@/lib/repos";
 import { APPLIED, FEATURED, THEMES } from "@/lib/applied";
 import { ButtonLink, Chips, Container, Eyebrow, TextLink } from "@/components/ui/primitives";
 import Link from "next/link";
@@ -18,7 +19,7 @@ export function GraphBand() {
               Navigate the work by skill, not by job title.
             </h2>
             <p className="mt-4 max-w-md text-mute">
-              Pick a node — SHACL, Forecasting, Agents — and see every case study, experiment and repository that uses it. {LAB.length} experiments and 12 repositories are wired in.
+              Pick a node — SHACL, Forecasting, Agents — and see every case study, experiment and repository that uses it. {LAB.length} experiments and {REPOS.length} repositories are wired in.
             </p>
             <div className="mt-7"><ButtonLink href="/graph/" variant="primary">Open the graph</ButtonLink></div>
           </div>
