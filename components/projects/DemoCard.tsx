@@ -1,14 +1,14 @@
 import type { Applied } from "@/lib/applied";
 import { Chips, TextLink } from "@/components/ui/primitives";
+import { DemoPlayer } from "@/components/projects/DemoPlayer";
 
 /** Repository card with an animated walkthrough preview: problem, one headline result, stack, links. */
 export function DemoCard({ a }: { a: Applied }) {
   return (
     <article id={a.name} className="flex scroll-mt-24 flex-col overflow-hidden rounded-2xl border border-line bg-surface transition-colors hover:border-accent/30">
-      <a href={a.links.video} target="_blank" rel="noopener noreferrer" className="block border-b border-line bg-bg-2" aria-label={`${a.title}: walkthrough video`}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- static export, GIF must stay animated */}
-        <img src={a.gif} alt={`${a.title} walkthrough preview`} width={800} height={450} loading="lazy" decoding="async" className="aspect-video h-auto w-full object-cover" />
-      </a>
+      <div className="border-b border-line">
+        <DemoPlayer gif={a.gif} video={a.links.video} title={a.title} />
+      </div>
       <div className="flex flex-1 flex-col gap-3 p-5 sm:p-6">
         <div>
           <span className="font-mono text-[0.6875rem] uppercase tracking-[0.1em] text-dim">{a.repo.area}</span>

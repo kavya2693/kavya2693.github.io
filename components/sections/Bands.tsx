@@ -5,6 +5,7 @@ import { REPOS } from "@/lib/repos";
 import { APPLIED, FEATURED, THEMES } from "@/lib/applied";
 import { ButtonLink, Chips, Container, Eyebrow, TextLink } from "@/components/ui/primitives";
 import Link from "next/link";
+import { DemoPlayer } from "@/components/projects/DemoPlayer";
 
 /** Teaser that sends visitors into the interactive graph, with one-tap entry points per branch. */
 export function GraphBand() {
@@ -66,10 +67,9 @@ export function AppliedBand() {
             </div>
             <div className="mt-7"><ButtonLink href="/supply-chain/" variant="primary">See all {APPLIED.length}</ButtonLink></div>
           </div>
-          <a href={f.links.video} target="_blank" rel="noopener noreferrer" className="order-first block min-w-0 overflow-hidden rounded-xl border border-line bg-bg-2 lg:order-none" aria-label={`${f.title}: walkthrough video`}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- static export, GIF must stay animated */}
-            <img src={f.gif} alt={`${f.title} walkthrough preview`} width={800} height={450} loading="lazy" decoding="async" className="aspect-video h-auto w-full object-cover" />
-          </a>
+          <div className="order-first block min-w-0 overflow-hidden rounded-xl border border-line bg-bg-2 lg:order-none">
+            <DemoPlayer gif={f.gif} video={f.links.video} title={f.title} />
+          </div>
         </div>
       </Container>
     </section>

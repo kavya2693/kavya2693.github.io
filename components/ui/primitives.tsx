@@ -76,7 +76,7 @@ export function TextLink({ href, children }: { href: string; children: React.Rea
   const ext = isExternal(href);
   const cls = "group inline-flex items-center gap-1.5 text-[0.88rem] font-medium text-accent hover:underline underline-offset-4";
   const icon = ext ? <ArrowUpRight aria-hidden className="h-3.5 w-3.5" /> : <ArrowRight aria-hidden className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />;
-  if (ext || href.endsWith(".html"))
+  if (ext || href.endsWith(".html") || href.endsWith(".mp4"))
     return (
       <a href={href} className={cls} {...(ext ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
         {children}

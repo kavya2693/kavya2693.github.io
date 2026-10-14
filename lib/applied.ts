@@ -50,7 +50,7 @@ export const APPLIED: Applied[] = META.map((m) => {
     ...m,
     repo,
     gif: `/work-demos/${m.name}.gif`,
-    links: { repo: `${GH}/${m.name}`, video: demo(m.name, "demo.mp4"), audit: demo(m.name, "AUDIT_REPORT.pdf") },
+    links: { repo: `${GH}/${m.name}`, video: `/work-demos/${m.name}.mp4`, audit: demo(m.name, "AUDIT_REPORT.pdf") },
   };
 });
 
