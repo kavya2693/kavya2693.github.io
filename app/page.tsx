@@ -4,13 +4,14 @@ import { Evaluation } from "@/components/sections/Evaluation";
 import { EngineeringProof } from "@/components/sections/EngineeringProof";
 import { Lifecycle } from "@/components/sections/Lifecycle";
 import { Stack } from "@/components/sections/Stack";
-import { GraphBand, ContactBand } from "@/components/sections/Bands";
+import { GraphBand, ContactBand, AppliedBand } from "@/components/sections/Bands";
 
 export default function Home() {
   return (
     <>
       <Hero />
       <SelectedSystems num="01" />
+      <AppliedBand />
       <GraphBand />
       <Evaluation num="02" />
       <EngineeringProof num="03" />

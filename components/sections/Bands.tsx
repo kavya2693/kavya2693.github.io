@@ -1,7 +1,8 @@
 import { SITE, TIMELINE } from "@/lib/site";
 import { GRAPH_NODES } from "@/lib/graph";
 import { LAB } from "@/lib/lab";
-import { ButtonLink, Container, Eyebrow } from "@/components/ui/primitives";
+import { APPLIED, FEATURED, THEMES } from "@/lib/applied";
+import { ButtonLink, Chips, Container, Eyebrow, TextLink } from "@/components/ui/primitives";
 import Link from "next/link";
 
 /** Teaser that sends visitors into the interactive graph, with one-tap entry points per branch. */
@@ -31,6 +32,43 @@ export function GraphBand() {
               </li>
             ))}
           </ul>
+        </div>
+      </Container>
+    </section>
+  );
+}
+
+/** Home-page entry to /supply-chain/, featuring one project with its walkthrough GIF. */
+export function AppliedBand() {
+  const f = FEATURED;
+  return (
+    <section className="border-t border-line py-20">
+      <Container>
+        <div className="grid items-center gap-10 rounded-2xl border border-line bg-gradient-to-b from-surface to-bg-2 p-6 sm:p-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+          <div className="min-w-0">
+            <Eyebrow className="mb-5">Supply chain &amp; applied AI</Eyebrow>
+            <h2 className="text-[clamp(1.6rem,3vw,2.2rem)] font-semibold leading-tight tracking-[-0.03em]">
+              {APPLIED.length} systems for forecasting, planning and routing, <span className="font-serif font-normal italic text-warm">each against its baseline.</span>
+            </h2>
+            <p className="mt-4 max-w-md text-mute">{THEMES.map((t) => t.label).join(" · ")}.</p>
+            <div className="mt-6 rounded-xl border border-line bg-surface p-4">
+              <p className="font-mono text-[0.6875rem] uppercase tracking-[0.1em] text-dim">Featured · {f.repo.area}</p>
+              <p className="mt-1 font-semibold">{f.title}</p>
+              <p className="mt-1 text-[0.88rem] leading-relaxed text-mute">{f.repo.does}</p>
+              {f.repo.evidence && <p className="mt-3 font-mono text-[0.76rem] text-ink-2">{f.repo.evidence}</p>}
+              <Chips items={f.stack} className="mt-3" />
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+                <TextLink href={f.links.repo}>Repo</TextLink>
+                <TextLink href={f.links.video}>Video</TextLink>
+                <TextLink href={f.links.audit}>Audit report (PDF)</TextLink>
+              </div>
+            </div>
+            <div className="mt-7"><ButtonLink href="/supply-chain/" variant="primary">See all {APPLIED.length}</ButtonLink></div>
+          </div>
+          <a href={f.links.video} target="_blank" rel="noopener noreferrer" className="order-first block min-w-0 overflow-hidden rounded-xl border border-line bg-bg-2 lg:order-none" aria-label={`${f.title}: walkthrough video`}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- static export, GIF must stay animated */}
+            <img src={f.gif} alt={`${f.title} walkthrough preview`} width={800} height={450} loading="lazy" decoding="async" className="aspect-video h-auto w-full object-cover" />
+          </a>
         </div>
       </Container>
     </section>
